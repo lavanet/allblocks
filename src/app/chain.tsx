@@ -79,7 +79,7 @@ export const Chain = (props: any) => {
             setMsAvg(((msAvg*msAvgCount) + latency) / (msAvgCount + 1))
             setMsAvgCount(msAvgCount + 1)
 
-            setData((prevData) => {
+            setData((prevData: any) => {
                 // Reset the data if all slots are filled
                 var newData = [...prevData];
                 if (currentSlotRef.current === 0) {
@@ -98,7 +98,7 @@ export const Chain = (props: any) => {
         } catch (err) {
             console.log("error sending relay", err);
 
-            setData((prevData) => {
+            setData((prevData: any) => {
                 var newData = [...prevData];
                 if (currentSlotRef.current === 0) {
                     newData = [...initialData];

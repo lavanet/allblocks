@@ -1,0 +1,24 @@
+{
+  "testnet": {
+    "1": [
+      {
+        "rpcAddress": "provider2-lav1.providers-us.lava-cybertron.xyz:443",
+        "publicAddress": "lava@1ttcekv34zhw79h3j88zw7zpg9ggxpp5muwckgn"
+      },
+      {
+        "rpcAddress": "provider1-lav1.providers-us.lava-cybertron.xyz:443",
+        "publicAddress": "lava@1l0gcpxw6zrhsxjv68rzvscvcx4p9f07y7974r5"
+      }
+    ],
+    "2": [
+      {
+        "rpcAddress": "provider1-lav1.providers-eu.lava-cybertron.xyz:443",
+        "publicAddress": "lava@1ywcy4y8cajjnfdk82g76qzyzhsehemf58dy906"
+      },
+      {
+        "rpcAddress": "provider2-lav1.providers-eu.lava-cybertron.xyz:443",
+        "publicAddress": "lava@1y6vnu44t284spmlu8v5d0k82axmdqkc6dwg3fl"
+      }
+    ]
+  }
+}

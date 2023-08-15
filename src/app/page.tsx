@@ -1,6 +1,10 @@
 import { Title, Text, Grid } from "@tremor/react";
 import { Chain } from "./chain";
-import { LavaSDKOptions, SendRelayOptions, SendRestRelayOptions } from "@lavanet/lava-sdk";
+import {
+  LavaSDKOptions,
+  SendRelayOptions,
+  SendRestRelayOptions,
+} from "../../lava/ecosystem/lava-sdk/bin/src/sdk/sdk";
 
 interface ChainDesc {
   name: string;
@@ -15,27 +19,27 @@ interface ChainDesc {
 const evmRelay = {
   method: "eth_blockNumber",
   params: [],
-}
+};
 
 const cosmosRelay = {
   method: "GET",
   url: "/cosmos/base/tendermint/v1beta1/blocks/latest",
-}
+};
 
 const aptosRelay = {
   method: "GET",
   url: "/",
-}
+};
 
 const starkRelay = {
   method: "starknet_blockNumber",
   params: [],
-}
+};
 
 const solanaRelay = {
   method: "getBlockHeight",
   params: [],
-}
+};
 
 const chains: Array<ChainDesc> = [
   {
@@ -296,12 +300,15 @@ const chains: Array<ChainDesc> = [
 const trkSz = 10;
 const sdkConfig: LavaSDKOptions = {
   badge: {
-    badgeServerAddress: process.env.NEXT_PUBLIC_BADGE_SERVER_ADDRESS || "",
-    projectId: process.env.NEXT_PUBLIC_BADGE_PROJECT_ID || "",
+    badgeServerAddress: "https://badges.lava-cybertron.xyz", // Or your own Badge-Server URL
+    projectId: "3160c0bb7fadd2c2c49a9bcb49b39478",
   },
   chainID: "",
   rpcInterface: "",
-  geolocation: "2",
+  lavaChainId: "lava-staging-4",
+  pairingListConfig: "pairingList.json",
+  secure: true,
+  debug: true,
 };
 
 const getConfig = (chain: ChainDesc) => {

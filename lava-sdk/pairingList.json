@@ -1,0 +1,15 @@
+{
+  "testnet": {
+    "1": [
+  {
+        "rpcAddress": "127.0.0.1:2221",
+        "publicAddress": "lava@122khx8a4yd0p6kjgnudxwj242c7djyhey9tf4v"
+        },{
+        "rpcAddress": "127.0.0.1:2222",
+        "publicAddress": "lava@1x52devz7nmw4xrevtsqs6uuad3x4k5cmflvapz"
+        },{
+        "rpcAddress": "127.0.0.1:2223",
+        "publicAddress": "lava@1rj9esvln07pgmgtnkfyyntxvy3z7mfsnaplza7"
+        }  ]
+  }
+}

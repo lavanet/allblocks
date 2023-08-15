@@ -1,6 +1,6 @@
 "use client";
 
-import { LavaSDK } from "../../lava/ecosystem/lava-sdk/bin/src/sdk/sdk";
+import { LavaSDK } from "../../lava-sdk/bin/src/sdk/sdk";
 import { useState, useEffect, useRef } from "react";
 import { Card, Title, Tracker, Flex, Text, Color, Badge } from "@tremor/react";
 

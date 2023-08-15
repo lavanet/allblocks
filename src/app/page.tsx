@@ -4,7 +4,7 @@ import {
   LavaSDKOptions,
   SendRelayOptions,
   SendRestRelayOptions,
-} from "../../lava/ecosystem/lava-sdk/bin/src/sdk/sdk";
+} from "../../lava-sdk/bin/src/sdk/sdk";
 
 interface ChainDesc {
   name: string;

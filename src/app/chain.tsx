@@ -51,7 +51,8 @@ interface SdkInitQueueItem {
   sdkConfig: any; // Replace 'any' with the actual type if known
   env: string;
   name: string;
-  setSdkInstance: (instance: any) => void; // Replace 'any' with the actual type if known
+  setSdkInstance: (instance: any) => void;
+  setSdkLoadTime: (instance: any) => void;
 }
 
 interface ChainProps {
@@ -161,7 +162,7 @@ export const Chain = (props: any) => {
         t = await new LavaSDK(chainProps!.sdkConfig);
       }
       const t1 = performance.now();
-      setSdkLoadTime(t1 - t0);
+      chainProps!.setSdkLoadTime(t1 - t0);
       chainProps!.setSdkInstance(t);
     } catch (err) {
       console.error("Error initializing SDK for chain:", chainProps!.name, err);
@@ -178,6 +179,7 @@ export const Chain = (props: any) => {
       env: props.env,
       name: props.name,
       setSdkInstance: setSdkInstance,
+      setSdkLoadTime: setSdkLoadTime,
     });
 
     // Start processing the queue if not already running

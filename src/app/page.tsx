@@ -306,8 +306,11 @@ const trkSz = 10;
 const sdkStagingConfig: LavaSDKOptionsLocal = {
   badge: {
     badgeServerAddress:
-      process.env.NEXT_PUBLIC_BADGE_SERVER_ADDRESS_STAGING || "",
-    projectId: process.env.NEXT_PUBLIC_BADGE_PROJECT_ID_STAGING || "",
+      process.env.NEXT_PUBLIC_BADGE_SERVER_ADDRESS_STAGING ||
+      "https://badges.lava-cybertron.xyz",
+    projectId:
+      process.env.NEXT_PUBLIC_BADGE_PROJECT_ID_STAGING ||
+      "79eef0054404d5bc750d6d56ef427c2b",
   },
   chainID: "",
   rpcInterface: "",
@@ -319,8 +322,11 @@ const sdkStagingConfig: LavaSDKOptionsLocal = {
 const sdkTestnetConfig: LavaSDKOptions = {
   badge: {
     badgeServerAddress:
-      process.env.NEXT_PUBLIC_BADGE_SERVER_ADDRESS_TESTNET || "",
-    projectId: process.env.NEXT_PUBLIC_BADGE_PROJECT_ID_TESTNET || "",
+      process.env.NEXT_PUBLIC_BADGE_SERVER_ADDRESS_TESTNET ||
+      "https://badges.lavanet.xyz",
+    projectId:
+      process.env.NEXT_PUBLIC_BADGE_PROJECT_ID_TESTNET ||
+      "3160c0bb7fadd2c2c49a9bcb49b39478",
   },
   chainID: "",
   rpcInterface: "",

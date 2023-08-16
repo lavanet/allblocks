@@ -355,25 +355,21 @@ export default function Home() {
         </TabList>
         <TabPanels>
           <TabPanel>
-            {false ? (
-              <Grid numItemsMd={3} className="mt-6 gap-6">
-                {chains.map((chain) => (
-                  <Chain
-                    key={chain.chainId}
-                    name={chain.name}
-                    testnet={chain.testnet}
-                    relay={chain.relay}
-                    relayParse={chain.relayParse}
-                    trkSz={trkSz}
-                    blockTimeSeconds={chain.blockTimeSeconds}
-                    sdkConfig={getConfig(chain, testnet)}
-                    env={testnet}
-                  />
-                ))}
-              </Grid>
-            ) : (
-              <></>
-            )}
+            <Grid numItemsMd={3} className="mt-6 gap-6">
+              {chains.map((chain) => (
+                <Chain
+                  key={chain.chainId}
+                  name={chain.name}
+                  testnet={chain.testnet}
+                  relay={chain.relay}
+                  relayParse={chain.relayParse}
+                  trkSz={trkSz}
+                  blockTimeSeconds={chain.blockTimeSeconds}
+                  sdkConfig={getConfig(chain, testnet)}
+                  env={testnet}
+                />
+              ))}
+            </Grid>
           </TabPanel>
 
           <TabPanel>

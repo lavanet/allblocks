@@ -313,6 +313,7 @@ const sdkStagingConfig: LavaSDKOptionsLocal = {
   lavaChainId: "lava-staging-4",
   pairingListConfig: "pairingList.json",
   secure: true,
+  debug: true,
 };
 
 const sdkTestnetConfig: LavaSDKOptions = {
@@ -323,7 +324,7 @@ const sdkTestnetConfig: LavaSDKOptions = {
   chainID: "",
   rpcInterface: "",
   geolocation: "2",
-  secure: true,
+  debug: true,
 };
 
 const getConfig = (chain: ChainDesc, env: string) => {

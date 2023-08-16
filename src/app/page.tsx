@@ -325,6 +325,7 @@ const sdkTestnetConfig: LavaSDKOptions = {
   rpcInterface: "",
   geolocation: "2",
   debug: true,
+  secure: true,
 };
 
 const getConfig = (chain: ChainDesc, env: string) => {

@@ -325,7 +325,6 @@ const sdkTestnetConfig: LavaSDKOptions = {
   rpcInterface: "",
   geolocation: "2",
   debug: true,
-  secure: true,
 };
 
 const getConfig = (chain: ChainDesc, env: string) => {
@@ -356,21 +355,25 @@ export default function Home() {
         </TabList>
         <TabPanels>
           <TabPanel>
-            <Grid numItemsMd={3} className="mt-6 gap-6">
-              {chains.map((chain) => (
-                <Chain
-                  key={chain.chainId}
-                  name={chain.name}
-                  testnet={chain.testnet}
-                  relay={chain.relay}
-                  relayParse={chain.relayParse}
-                  trkSz={trkSz}
-                  blockTimeSeconds={chain.blockTimeSeconds}
-                  sdkConfig={getConfig(chain, testnet)}
-                  env={testnet}
-                />
-              ))}
-            </Grid>
+            {false ? (
+              <Grid numItemsMd={3} className="mt-6 gap-6">
+                {chains.map((chain) => (
+                  <Chain
+                    key={chain.chainId}
+                    name={chain.name}
+                    testnet={chain.testnet}
+                    relay={chain.relay}
+                    relayParse={chain.relayParse}
+                    trkSz={trkSz}
+                    blockTimeSeconds={chain.blockTimeSeconds}
+                    sdkConfig={getConfig(chain, testnet)}
+                    env={testnet}
+                  />
+                ))}
+              </Grid>
+            ) : (
+              <></>
+            )}
           </TabPanel>
 
           <TabPanel>

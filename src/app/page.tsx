@@ -315,9 +315,6 @@ const sdkStagingConfig: LavaSDKOptionsLocal = {
 };
 
 const sdkTestnetConfig: LavaSDKOptions = {
-  //lava@1njpluu6qva2kx06zmedr8ewtgtzg5hp4nmqama
-  //
-
   badge: {
     badgeServerAddress: "https://badges.lavanet.xyz", // Or your own Badge-Server URL
     projectId: "7c9e78e799b69337b7e59e9394f98bf9",

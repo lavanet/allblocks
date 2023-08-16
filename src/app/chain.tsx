@@ -154,11 +154,14 @@ export const Chain = (props: any) => {
     const chainProps = sdkInitQueue.shift();
     let t;
     try {
+      const t0 = performance.now();
       if (chainProps!.env === "staging") {
         t = await new LavaSDKLocal(chainProps!.sdkConfig);
       } else if (chainProps!.env === "testnet") {
         t = await new LavaSDK(chainProps!.sdkConfig);
       }
+      const t1 = performance.now();
+      setSdkLoadTime(t1 - t0);
       chainProps!.setSdkInstance(t);
     } catch (err) {
       console.error("Error initializing SDK for chain:", chainProps!.name, err);

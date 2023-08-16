@@ -312,19 +312,19 @@ const sdkStagingConfig: LavaSDKOptionsLocal = {
   rpcInterface: "",
   lavaChainId: "lava-staging-4",
   pairingListConfig: "pairingList.json",
-  secure: true,
-  debug: true,
 };
 
 const sdkTestnetConfig: LavaSDKOptions = {
+  //lava@1njpluu6qva2kx06zmedr8ewtgtzg5hp4nmqama
+  //
+
   badge: {
-    badgeServerAddress: "https://badges.lavanet.xyz",
-    projectId: "3160c0bb7fadd2c2c49a9bcb49b39478",
+    badgeServerAddress: "https://badges.lavanet.xyz", // Or your own Badge-Server URL
+    projectId: "7c9e78e799b69337b7e59e9394f98bf9",
   },
   chainID: "",
   rpcInterface: "",
   geolocation: "2",
-  debug: true,
 };
 
 const getConfig = (chain: ChainDesc, env: string) => {

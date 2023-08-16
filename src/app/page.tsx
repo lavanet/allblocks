@@ -323,6 +323,7 @@ const sdkTestnetConfig: LavaSDKOptions = {
   chainID: "",
   rpcInterface: "",
   geolocation: "2",
+  secure: true,
 };
 
 const getConfig = (chain: ChainDesc, env: string) => {

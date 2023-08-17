@@ -1,7 +1,6 @@
 import { Grid, Text, Title } from "@tremor/react";
 import { TabList, Tab, TabGroup, TabPanels, TabPanel } from "@tremor/react";
 import { Chain } from "./chain";
-import { LavaSDKOptions as LavaSDKOptionsLocal } from "../../bin/src/sdk/sdk";
 
 import {
   LavaSDKOptions,
@@ -299,40 +298,21 @@ const chains: Array<ChainDesc> = [
   },
 ];
 
-const staging = "staging";
 const testnet = "testnet";
 
 const trkSz = 10;
-const sdkStagingConfig: LavaSDKOptionsLocal = {
-  badge: {
-    badgeServerAddress: "https://badges.lava-cybertron.xyz",
-    projectId: "79eef0054404d5bc750d6d56ef427c2b",
-  },
-  chainID: "",
-  rpcInterface: "",
-  lavaChainId: "lava-staging-4",
-  pairingListConfig: "pairingList.json",
-};
-
 const sdkTestnetConfig: LavaSDKOptions = {
   badge: {
-    badgeServerAddress: "https://badges.lavanet.xyz", // Or your own Badge-Server URL
-    projectId: "7c9e78e799b69337b7e59e9394f98bf9",
+    badgeServerAddress: process.env.NEXT_PUBLIC_BADGE_SERVER_ADDRESS || "",
+    projectId: process.env.NEXT_PUBLIC_BADGE_PROJECT_ID || "",
   },
   chainID: "",
   rpcInterface: "",
   geolocation: "2",
 };
 
-const getConfig = (chain: ChainDesc, env: string) => {
-  let config = sdkTestnetConfig;
-  if (env == staging) {
-    config = sdkStagingConfig;
-  } else if (env == testnet) {
-    config = sdkTestnetConfig;
-  }
-
-  let newConfig = structuredClone(config);
+const getConfig = (chain: ChainDesc) => {
+  let newConfig = structuredClone(sdkTestnetConfig);
   newConfig.chainID = chain.chainId;
   newConfig.rpcInterface = chain.rpcInterface;
   return newConfig;
@@ -348,7 +328,6 @@ export default function Home() {
       <TabGroup>
         <TabList className="mt-8">
           <Tab>Testnet</Tab>
-          <Tab>Staging</Tab>
         </TabList>
         <TabPanels>
           <TabPanel>
@@ -362,26 +341,8 @@ export default function Home() {
                   relayParse={chain.relayParse}
                   trkSz={trkSz}
                   blockTimeSeconds={chain.blockTimeSeconds}
-                  sdkConfig={getConfig(chain, testnet)}
+                  sdkConfig={getConfig(chain)}
                   env={testnet}
-                />
-              ))}
-            </Grid>
-          </TabPanel>
-
-          <TabPanel>
-            <Grid numItemsMd={3} className="mt-6 gap-6">
-              {chains.map((chain) => (
-                <Chain
-                  key={chain.chainId}
-                  name={chain.name}
-                  testnet={chain.testnet}
-                  relay={chain.relay}
-                  relayParse={chain.relayParse}
-                  trkSz={trkSz}
-                  blockTimeSeconds={chain.blockTimeSeconds}
-                  sdkConfig={getConfig(chain, staging)}
-                  env={staging}
                 />
               ))}
             </Grid>

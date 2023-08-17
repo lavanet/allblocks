@@ -1,6 +1,5 @@
 "use client";
 
-import { LavaSDK as LavaSDKLocal } from "../../bin/src/sdk/sdk";
 import { LavaSDK } from "@lavanet/lava-sdk";
 import { useState, useEffect, useRef } from "react";
 import { Card, Title, Tracker, Flex, Text, Color, Badge } from "@tremor/react";
@@ -10,27 +9,52 @@ interface RelayParseFunc {
 }
 
 const evmRelayParse = (res: string): number => {
-  const ret = JSON.parse(res);
+  let ret;
+  try {
+    ret = JSON.parse(res);
+  } catch (error) {
+    console.log("evmRelayParse", error, res)
+  }
   return Number(ret["result"]);
 };
 
 const cosmosRelayParse = (res: string): number => {
-  const ret = JSON.parse(res);
+  let ret;
+  try {
+    ret = JSON.parse(res);
+  } catch (error) {
+    console.log("cosmosRelayParse", error, res)
+  }
   return Number(ret["block"]["header"]["height"]);
 };
 
 const aptosRelayParse = (res: string): number => {
-  const ret = JSON.parse(res);
+  let ret;
+  try {
+    ret = JSON.parse(res);
+  } catch (error) {
+    console.log("aptosRelayParse", error, res)
+  }
   return Number(ret["block_height"]);
 };
 
 const starkRelayParse = (res: string): number => {
-  const ret = JSON.parse(res);
+  let ret;
+  try {
+    ret = JSON.parse(res);
+  } catch (error) {
+    console.log("starkRelayParse", error, res)
+  }
   return Number(ret["result"]);
 };
 
 const solanaRelayParse = (res: string): number => {
-  const ret = JSON.parse(res);
+  let ret;
+  try {
+    ret = JSON.parse(res);
+  } catch (error) {
+    console.log("solanaRelayParse", error, res)
+  }
   return Number(ret["result"]);
 };
 
@@ -78,13 +102,13 @@ export const Chain = (props: any) => {
   const blocktime = props.blockTimeSeconds * 1000;
   const currentSlotRef = useRef(0);
 
-  const [sdkInstance, setSdkInstance] = useState<null | LavaSDK | LavaSDKLocal>(
+  const [sdkInstance, setSdkInstance] = useState<null | LavaSDK>(
     null
   );
   const [block, setBlock] = useState(0);
   const [sdkLoadTime, setSdkLoadTime] = useState(0);
 
-  const sdkInstanceRef = useRef<null | LavaSDK | LavaSDKLocal>(null);
+  const sdkInstanceRef = useRef<null | LavaSDK>(null);
   const [getBlockNow, setGetBlockNow] = useState(0);
 
   const getBlock = async () => {
@@ -156,11 +180,7 @@ export const Chain = (props: any) => {
     let t;
     try {
       const t0 = performance.now();
-      if (chainProps!.env === "staging") {
-        t = await new LavaSDKLocal(chainProps!.sdkConfig);
-      } else if (chainProps!.env === "testnet") {
-        t = await new LavaSDK(chainProps!.sdkConfig);
-      }
+      t = await new LavaSDK(chainProps!.sdkConfig);
       const t1 = performance.now();
       chainProps!.setSdkLoadTime(t1 - t0);
       chainProps!.setSdkInstance(t);

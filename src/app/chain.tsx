@@ -2,7 +2,8 @@
 
 import { LavaSDK } from "@lavanet/lava-sdk";
 import { useState, useEffect, useRef } from "react";
-import { Card, Title, Tracker, Flex, Text, Color, Badge } from "@tremor/react";
+import { Card, Title, Tracker, Flex, Text, Color, Badge, Icon } from "@tremor/react";
+import { HandIcon } from "@heroicons/react/outline";
 
 interface RelayParseFunc {
   (res: string): number;
@@ -101,6 +102,7 @@ export const Chain = (props: any) => {
   const [msAvgCount, setMsAvgCount] = useState(0);
   const blocktime = props.blockTimeSeconds * 1000;
   const currentSlotRef = useRef(0);
+  const [selectedChain, setSelectedChain] = useState('');
 
   const [sdkInstance, setSdkInstance] = useState<null | LavaSDK>(
     null
@@ -225,16 +227,21 @@ export const Chain = (props: any) => {
   return (
     <Card className="mx-auto">
       <Flex justifyContent="between" alignItems="center">
-        <Title>{props.name}</Title>
-        {props.testnet === "" ? (
-          <Badge size="lg" color="green">
-            Mainnet
-          </Badge>
-        ) : (
-          <Badge size="lg" color="red">
-            {props.testnet}
-          </Badge>
-        )}
+        <Title>
+          {props.name}
+        </Title>
+        <div>
+          {props.testnet === "" ? (
+            <Badge size="lg" color="green">
+              Mainnet
+            </Badge>
+          ) : (
+            <Badge size="lg" color="red">
+              {props.testnet}
+            </Badge>
+          )}
+          <Icon icon={HandIcon} onClick={() => props.filterChain(props.chainId)} size="xs" className="cursor-pointer" variant="solid" />
+        </div>
       </Flex>
       <Text>
         SDK load time{" "}

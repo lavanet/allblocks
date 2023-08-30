@@ -1,4 +1,7 @@
+"use client";
+
 import { Grid, Text, Title } from "@tremor/react";
+import { useState } from "react";
 import { TabList, Tab, TabGroup, TabPanels, TabPanel } from "@tremor/react";
 import { Chain } from "./chain";
 
@@ -319,6 +322,17 @@ const getConfig = (chain: ChainDesc) => {
 };
 
 export default function Home() {
+  const [filter, setFilter] = useState('');
+
+  const filterChain = (f: string) => {
+    if (f == filter) {
+      setFilter('');
+    } else {
+      setFilter(f);
+    }
+  }
+
+
   return (
     <main className="container mx-auto p-8 max-w-5xl">
       <Title>All blocks</Title>
@@ -332,19 +346,25 @@ export default function Home() {
         <TabPanels>
           <TabPanel>
             <Grid numItemsMd={3} className="mt-6 gap-6">
-              {chains.map((chain) => (
-                <Chain
-                  key={chain.chainId}
-                  name={chain.name}
-                  testnet={chain.testnet}
-                  relay={chain.relay}
-                  relayParse={chain.relayParse}
-                  trkSz={trkSz}
-                  blockTimeSeconds={chain.blockTimeSeconds}
-                  sdkConfig={getConfig(chain)}
-                  env={testnet}
-                />
-              ))}
+              {chains.map((chain) => {
+                if ((filter == '') || ((filter != '') && (chain.chainId == filter))) {
+                  return (
+                    <Chain
+                      key={chain.chainId}
+                      chainId={chain.chainId}
+                      name={chain.name}
+                      testnet={chain.testnet}
+                      relay={chain.relay}
+                      relayParse={chain.relayParse}
+                      trkSz={trkSz}
+                      blockTimeSeconds={chain.blockTimeSeconds}
+                      sdkConfig={getConfig(chain)}
+                      env={testnet}
+                      filterChain={filterChain}
+                    />
+                  )
+                }
+              })}
             </Grid>
           </TabPanel>
         </TabPanels>

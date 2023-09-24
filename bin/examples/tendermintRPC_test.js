@@ -27,7 +27,7 @@ function getLatestBlock() {
         // Default rpcInterface for Cosmos Hub is tendermintRPC
         const cosmosHub = yield sdk_1.LavaSDK.create({
             // private key with an active subscription
-            privateKey: "a7c60a15da4e0f58d28ad4f64d9ee0362f01e194923de5b8f23d555f7a906c2b",
+            privateKey: "4cebe21b55fccc9310f944717bc40d3f64a5c1ee4bf6d1c8125c933213b2016f",
             // chainID for Cosmos Hub
             chainIds: "LAV1",
             // geolocation 1 for North america - geolocation 2 for Europe providers
@@ -39,27 +39,32 @@ function getLatestBlock() {
             allowInsecureTransport: true,
         });
         // Get abci_info
-        const info = yield cosmosHub.sendRelay({
-            method: "abci_info",
-            params: [],
-        });
-        // Parse and extract response
-        const parsedInfo = info.result.response;
-        // Extract latest block number
-        const latestBlockNumber = parsedInfo.last_block_height;
-        // Fetch latest block
-        const latestBlock = yield cosmosHub.sendRelay({
-            method: "block",
-            params: [latestBlockNumber],
-        });
-        return latestBlock;
+        const results = [];
+        for (let i = 0; i < 10; i++) {
+            const info = yield cosmosHub.sendRelay({
+                method: "abci_info",
+                params: [],
+            });
+            // Parse and extract response
+            const parsedInfo = info.result.response;
+            // Extract latest block number
+            const latestBlockNumber = parsedInfo.last_block_height;
+            // Fetch latest block
+            const latestBlock = yield cosmosHub.sendRelay({
+                method: "block",
+                params: [latestBlockNumber],
+            });
+            results.push(latestBlock);
+            console.log("Latest block:", latestBlock);
+        }
+        return results;
     });
 }
 (function () {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const latestBlock = yield getLatestBlock();
-            console.log("Latest block:", latestBlock);
+            const results = yield getLatestBlock();
+            console.log("results:", results);
             process.exit(0);
         }
         catch (error) {

@@ -138,7 +138,7 @@ class PairingUpdater {
             pairingFromDifferentGeolocation.length == 0) {
             logger_1.Logger.debug("No relevant providers found");
         }
-        logger_1.Logger.debug("providers initialized", "our geo", pairingForSameGeolocation, "other geo", pairingFromDifferentGeolocation);
+        logger_1.Logger.debug("providers initialized", "our geo", JSON.stringify(pairingForSameGeolocation), "other geo", JSON.stringify(pairingFromDifferentGeolocation));
         // Return providers list [pairingForSameGeolocation,pairingFromDifferentGeolocation]
         return pairingForSameGeolocation.concat(pairingFromDifferentGeolocation);
     }

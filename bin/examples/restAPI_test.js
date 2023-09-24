@@ -23,7 +23,7 @@ function getLatestBlockAndValidators() {
         // If you want to use rest it needs to be explicitly defined
         const lavaSDK = yield sdk_1.LavaSDK.create({
             // private key with an active subscription
-            privateKey: "a7c60a15da4e0f58d28ad4f64d9ee0362f01e194923de5b8f23d555f7a906c2b",
+            privateKey: "4cebe21b55fccc9310f944717bc40d3f64a5c1ee4bf6d1c8125c933213b2016f",
             // chainID for Cosmos Hub
             chainIds: "LAV1",
             // geolocation 1 for North america - geolocation 2 for Europe providers

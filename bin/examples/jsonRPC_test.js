@@ -27,9 +27,9 @@ function getLatestBlock() {
         // Default rpcInterface for Ethereum Mainnet is jsonRPC
         const ethereum = yield sdk_1.LavaSDK.create({
             // private key with an active subscription
-            privateKey: "a7c60a15da4e0f58d28ad4f64d9ee0362f01e194923de5b8f23d555f7a906c2b",
+            privateKey: "4cebe21b55fccc9310f944717bc40d3f64a5c1ee4bf6d1c8125c933213b2016f",
             // chainID for Ethereum mainnet
-            chainIds: "LAV1",
+            chainIds: "ETH1",
             // geolocation 1 for North america - geolocation 2 for Europe providers
             // default value is 1
             geolocation: "1",
@@ -38,19 +38,19 @@ function getLatestBlock() {
             logLevel: "debug",
             allowInsecureTransport: true,
         });
-        // Get abci_info
-        const info = yield ethereum.sendRelay({
-            method: "abci_info",
+        // Get latest block number
+        const blockNumberResponse = yield ethereum.sendRelay({
+            method: "eth_blockNumber",
             params: [],
         });
         // Parse and extract response
-        const parsedInfo = info.result.response;
+        const parsedResponse = blockNumberResponse;
         // Extract latest block number
-        const latestBlockNumber = parsedInfo.last_block_height;
-        // Fetch latest block
+        const latestBlockNumber = parsedResponse.result;
+        // Get latest block
         const latestBlock = yield ethereum.sendRelay({
-            method: "block",
-            params: [latestBlockNumber],
+            method: "eth_getBlockByNumber",
+            params: [latestBlockNumber, true],
         });
         return latestBlock;
     });

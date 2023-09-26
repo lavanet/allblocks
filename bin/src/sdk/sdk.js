@@ -46,9 +46,6 @@ class LavaSDK {
         if (!badge && !privateKey) {
             throw errors_1.default.errPrivKeyAndBadgeNotInitialized;
         }
-        else if (badge && privateKey) {
-            throw errors_1.default.errPrivKeyAndBadgeBothInitialized;
-        }
         // Set log level
         logger_1.Logger.SetLogLevel(options.logLevel);
         // Init attributes
@@ -84,7 +81,8 @@ class LavaSDK {
         var _a;
         return __awaiter(this, void 0, void 0, function* () {
             // Init wallet
-            if (!this.badgeManager.isActive()) {
+            // Check if badge is not specified or user specified a wallet to use with badge
+            if (!this.badgeManager.isActive() || this.privKey != "") {
                 const wallet = yield (0, wallet_1.createWallet)(this.privKey);
                 this.account = yield wallet.getConsumerAccount();
             }
@@ -229,6 +227,13 @@ class LavaSDK {
                 specId = supported.specId;
                 if (isRest) {
                     apiInterface = base_chain_parser_1.APIInterfaceRest;
+                    continue;
+                }
+                if (options.apiInterface == apiInterface) {
+                    continue;
+                }
+                if (options.apiInterface == supported.apiInterface) {
+                    apiInterface = supported.apiInterface;
                     continue;
                 }
                 if (apiInterface != "" &&

@@ -14,13 +14,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BadgeManager = exports.TimoutFailureFetchingBadgeError = void 0;
 const badges_pb_service_1 = require("../grpc_web_services/lavanet/lava/pairing/badges_pb_service");
-const badges_pb_1 = require("..//grpc_web_services/lavanet/lava/pairing/badges_pb");
+const badges_pb_1 = require("../grpc_web_services/lavanet/lava/pairing/badges_pb");
 const grpc_web_1 = require("@improbable-eng/grpc-web");
 const browser_1 = __importDefault(require("../util/browser"));
+const logger_1 = require("../logger/logger");
 const BadBadgeUsageWhileNotActiveError = new Error("Bad BadgeManager usage detected, trying to use badge manager while not active");
 exports.TimoutFailureFetchingBadgeError = new Error("Failed fetching badge, exceeded timeout duration");
 class BadgeManager {
-    constructor(options) {
+    constructor(options, transport) {
         this.badgeServerAddress = "";
         this.projectId = "";
         this.active = true;
@@ -30,11 +31,12 @@ class BadgeManager {
         }
         this.badgeServerAddress = options.badgeServerAddress;
         this.projectId = options.projectId;
+        this.authentication = new grpc_web_1.grpc.Metadata();
         if (options.authentication) {
-            this.authentication = new Map([
-                ["Authorization", options.authentication],
-            ]);
+            this.authentication.append("Authorization", options.authentication);
         }
+        this.transport = transport;
+        this.badgeGeneratorClient = new badges_pb_service_1.BadgeGeneratorClient(this.badgeServerAddress, this.getTransportWrapped());
     }
     isActive() {
         return this.active;
@@ -49,24 +51,36 @@ class BadgeManager {
             request.setProjectId(this.projectId);
             request.setSpecId(specId);
             const requestPromise = new Promise((resolve, reject) => {
-                grpc_web_1.grpc.invoke(badges_pb_service_1.BadgeGenerator.GenerateBadge, {
-                    request: request,
-                    host: this.badgeServerAddress,
-                    metadata: this.authentication ? this.authentication : {},
-                    transport: browser_1.default,
-                    onMessage: (message) => {
-                        resolve(message);
-                    },
-                    onEnd: (code, msg) => {
-                        if (code == grpc_web_1.grpc.Code.OK || msg == undefined) {
-                            return;
-                        }
-                        reject(new Error("Failed fetching a badge from the badge server, message: " + msg));
-                    },
+                if (!this.badgeGeneratorClient || !this.authentication) {
+                    // type fix with checks as they cant really be undefined.
+                    throw BadBadgeUsageWhileNotActiveError;
+                }
+                this.badgeGeneratorClient.generateBadge(request, this.authentication, (err, result) => {
+                    if (err != null) {
+                        logger_1.Logger.error("failed fetching badge", err);
+                        reject(err);
+                    }
+                    if (result != null) {
+                        resolve(result);
+                    }
+                    reject(new Error("Didn't get an error nor result"));
                 });
             });
             return this.relayWithTimeout(5000, requestPromise);
         });
+    }
+    getTransport() {
+        if (this.transport) {
+            return this.transport;
+        }
+        return browser_1.default;
+    }
+    getTransportWrapped() {
+        return {
+            // if allow insecure we use a transport with rejectUnauthorized disabled
+            // otherwise normal transport (default to rejectUnauthorized = true));}
+            transport: this.getTransport(),
+        };
     }
     timeoutPromise(timeout) {
         return new Promise((resolve, reject) => {

@@ -1,9 +1,7 @@
 import { Grid, Text, Title } from "@tremor/react";
 import { TabList, Tab, TabGroup, TabPanels, TabPanel } from "@tremor/react";
 import { Chain } from "./chain";
-import { LavaSDKOptions as LavaSDKOptionsLocal } from "../../bin/src/sdk/sdk";
-
-import { SendRelayOptions, SendRestRelayOptions } from "../../bin/src/sdk/sdk";
+import { LavaSDKOptions as LavaSDKOptionsLocal, SendRelayOptions, SendRestRelayOptions } from "../../bin/src/sdk/sdk";
 
 interface ChainDesc {
   name: string;
@@ -18,6 +16,7 @@ interface ChainDesc {
 const evmRelay = {
   method: "eth_blockNumber",
   params: [],
+  apiInterface: "jsonrpc",
 };
 
 const cosmosRelay = {
@@ -311,7 +310,6 @@ const sdkStagingConfig: LavaSDKOptionsLocal = {
 
   lavaChainId: "lava-staging-4",
 
-  logLevel: "debug",
 };
 
 const getConfig = (chain: ChainDesc, env: string) => {

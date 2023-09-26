@@ -93,7 +93,7 @@ class StateBadgeQuery {
                 return badgeResponse;
             }
             catch (err) {
-                logger_1.Logger.error(err);
+                throw logger_1.Logger.fatal("Failed fetching badge", err);
             }
         });
     }

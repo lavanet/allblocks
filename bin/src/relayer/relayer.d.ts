@@ -18,7 +18,7 @@ export declare class Relayer {
     private transport;
     constructor(relayerOptions: RelayerOptions);
     setBadge(badge: Badge | undefined): void;
-    probeProvider(providerAddress: string, apiInterface: string, specId: string): Promise<ProbeReply>;
+    probeProvider(providerAddress: string, apiInterface: string, guid: number, specId: string): Promise<ProbeReply>;
     sendRelay(client: RelayerClient, relayRequest: RelayRequest, timeout: number): Promise<RelayReply | Error>;
     constructAndSendRelay(options: SendRelayOptions, singleConsumerSession: SingleConsumerSession): Promise<RelayReply>;
     getTransport(): grpc.TransportFactory;

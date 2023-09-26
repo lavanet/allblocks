@@ -27,7 +27,7 @@ function getLatestBlock() {
         // Default rpcInterface for Cosmos Hub is tendermintRPC
         const cosmosHub = yield sdk_1.LavaSDK.create({
             // private key with an active subscription
-            privateKey: "73ec2281557742b8135a69ebae6364a9220ac56257deefddfe90b24c458d0ce4",
+            privateKey: "83db09589ff379fad9d8948ec5d6a1b76c9427edace1a87c02df969832f88f8a",
             // chainID for Cosmos Hub
             chainIds: "LAV1",
             // geolocation 1 for North america - geolocation 2 for Europe providers

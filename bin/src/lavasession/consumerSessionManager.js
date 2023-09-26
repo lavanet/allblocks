@@ -492,8 +492,9 @@ class ConsumerSessionManager {
             const retryProbing = [];
             for (const consumerSessionWithProvider of pairingList) {
                 const startTime = performance.now();
+                const guid = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
                 promiseProbeArray.push(this.relayer
-                    .probeProvider(consumerSessionWithProvider.endpoints[0].networkAddress, this.getRpcEndpoint().apiInterface, this.getRpcEndpoint().chainId)
+                    .probeProvider(consumerSessionWithProvider.endpoints[0].networkAddress, this.getRpcEndpoint().apiInterface, guid, this.getRpcEndpoint().chainId)
                     .then((probeReply) => {
                     const endTime = performance.now();
                     const latency = endTime - startTime;
@@ -502,15 +503,18 @@ class ConsumerSessionManager {
                         " chainID: " +
                         this.getRpcEndpoint().chainId +
                         " latency: ", latency + " ms");
+                    if (guid != probeReply.getGuid()) {
+                        logger_1.Logger.error("Guid mismatch for probe request and response. requested: ", guid, "response:", probeReply.getGuid());
+                    }
                     const lavaEpoch = probeReply.getLavaEpoch();
-                    logger_1.Logger.debug(`Lava Epoch for provider ${consumerSessionWithProvider.publicLavaAddress}: ${lavaEpoch}`);
+                    logger_1.Logger.debug(`Probing Result for provider ${consumerSessionWithProvider.publicLavaAddress}, Epoch: ${lavaEpoch}, Lava Block: ${probeReply.getLavaLatestBlock()}`);
                     this.epochTracker.setEpoch(consumerSessionWithProvider.publicLavaAddress, lavaEpoch);
                     // when epoch == 0 this is the initialization of the sdk. meaning we don't have information, we will take the median
                     // reported epoch from the providers probing and change the current epoch value as we probe more providers.
                     if (epoch == 0) {
                         this.currentEpoch = this.getEpochFromEpochTracker(); // setting the epoch for initialization.
                     }
-                    consumerSessionWithProvider.setPairingEpoch(lavaEpoch); // set the pairing epoch on the specific provider.
+                    consumerSessionWithProvider.setPairingEpoch(this.currentEpoch); // set the pairing epoch on the specific provider.
                 })
                     .catch((e) => {
                     logger_1.Logger.warn("Failed fetching probe from provider", consumerSessionWithProvider.getPublicLavaAddressAndPairingEpoch(), "Error:", e);

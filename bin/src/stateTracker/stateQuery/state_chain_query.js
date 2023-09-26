@@ -249,7 +249,7 @@ class StateChainQuery {
                 // Create a new pairing object
                 const newPairing = new consumerTypes_1.ConsumerSessionsWithProvider(provider.publicAddress, [endpoint], {}, 1000, 0);
                 const stakeEntry = new stake_entry_pb_1.StakeEntry();
-                stakeEntry.setEndpointsList(pairingEndpoints);
+                stakeEntry.setEndpointsList([pairingEndpoint]);
                 stakeEntry.setAddress(provider.publicAddress);
                 pairing.push(stakeEntry);
                 const randomSessionId = (0, common_1.generateRandomInt)();

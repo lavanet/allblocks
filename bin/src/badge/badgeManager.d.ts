@@ -1,4 +1,5 @@
-import { GenerateBadgeResponse } from "..//grpc_web_services/lavanet/lava/pairing/badges_pb";
+import { GenerateBadgeResponse } from "../grpc_web_services/lavanet/lava/pairing/badges_pb";
+import { grpc } from "@improbable-eng/grpc-web";
 export declare const TimoutFailureFetchingBadgeError: Error;
 /**
  * Interface for managing Badges
@@ -13,9 +14,15 @@ export declare class BadgeManager {
     private projectId;
     private authentication;
     private active;
-    constructor(options: BadgeOptions | undefined);
+    private transport;
+    private badgeGeneratorClient?;
+    constructor(options: BadgeOptions | undefined, transport?: grpc.TransportFactory);
     isActive(): boolean;
     fetchBadge(badgeUser: string, specId: string): Promise<GenerateBadgeResponse | Error>;
+    getTransport(): grpc.TransportFactory;
+    getTransportWrapped(): {
+        transport: grpc.TransportFactory;
+    };
     private timeoutPromise;
     private relayWithTimeout;
 }

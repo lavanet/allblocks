@@ -70,11 +70,11 @@ class Relayer {
         }
         this.badge = badge;
     }
-    probeProvider(providerAddress, apiInterface, specId) {
+    probeProvider(providerAddress, apiInterface, guid, specId) {
         return __awaiter(this, void 0, void 0, function* () {
             const client = new relay_pb_service_1.RelayerClient(this.prefix + "://" + providerAddress, this.getTransportWrapped());
             const request = new relay_pb_1.ProbeRequest();
-            request.setGuid(123);
+            request.setGuid(guid);
             request.setApiInterface(apiInterface);
             request.setSpecId(specId);
             const requestPromise = new Promise((resolve, reject) => {

@@ -3,11 +3,7 @@ import { TabList, Tab, TabGroup, TabPanels, TabPanel } from "@tremor/react";
 import { Chain } from "./chain";
 import { LavaSDKOptions as LavaSDKOptionsLocal } from "../../bin/src/sdk/sdk";
 
-import {
-  LavaSDKOptions,
-  SendRelayOptions,
-  SendRestRelayOptions,
-} from "@lavanet/lava-sdk";
+import { SendRelayOptions, SendRestRelayOptions } from "../../bin/src/sdk/sdk";
 
 interface ChainDesc {
   name: string;
@@ -25,12 +21,12 @@ const evmRelay = {
 };
 
 const cosmosRelay = {
-  method: "GET",
+  connectionType: "GET",
   url: "/cosmos/base/tendermint/v1beta1/blocks/latest",
 };
 
 const aptosRelay = {
-  method: "GET",
+  connectionType: "GET",
   url: "/",
 };
 
@@ -309,35 +305,20 @@ const sdkStagingConfig: LavaSDKOptionsLocal = {
     projectId: "79eef0054404d5bc750d6d56ef427c2b",
   },
   chainIds: "",
-  geolocation: "1",
-  lavaChainId: "lava-staging-4",
-};
-
-const sdkTestnetConfig: LavaSDKOptions = {
-  badge: {
-    badgeServerAddress: "https://badges.lavanet.xyz", // Or your own Badge-Server URL
-    projectId: "7c9e78e799b69337b7e59e9394f98bf9",
-  },
-  chainID: "",
-  rpcInterface: "",
+  // geolocation 1 for North america - geolocation 2 for Europe providers
+  // default value is 1
   geolocation: "2",
+
+  lavaChainId: "lava-staging-4",
+
+  logLevel: "debug",
 };
 
 const getConfig = (chain: ChainDesc, env: string) => {
-  let config: any;
-  if (env == staging) {
-    config = sdkStagingConfig;
-  } else if (env == testnet) {
-    config = sdkTestnetConfig;
-  }
+  let config = sdkStagingConfig;
 
   let newConfig = structuredClone(config);
-  if (env == staging) {
-    newConfig.chainIds = chain.chainId;
-  } else if (env == testnet) {
-    newConfig.chainID = chain.chainId;
-    newConfig.rpcInterface = chain.rpcInterface;
-  }
+  newConfig.chainIds = chain.chainId;
 
   return newConfig;
 };
@@ -351,28 +332,9 @@ export default function Home() {
       </Text>
       <TabGroup>
         <TabList className="mt-8">
-          <Tab>Testnet</Tab>
           <Tab>Staging</Tab>
         </TabList>
         <TabPanels>
-          <TabPanel>
-            <Grid numItemsMd={3} className="mt-6 gap-6">
-              {chains.map((chain) => (
-                <Chain
-                  key={chain.chainId}
-                  name={chain.name}
-                  testnet={chain.testnet}
-                  relay={chain.relay}
-                  relayParse={chain.relayParse}
-                  trkSz={trkSz}
-                  blockTimeSeconds={chain.blockTimeSeconds}
-                  sdkConfig={getConfig(chain, testnet)}
-                  env={testnet}
-                />
-              ))}
-            </Grid>
-          </TabPanel>
-
           <TabPanel>
             <Grid numItemsMd={3} className="mt-6 gap-6">
               {chains.map((chain) => (

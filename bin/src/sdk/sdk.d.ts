@@ -54,4 +54,4 @@ export declare class LavaSDK {
     protected isRest(options: SendRelayOptions | SendRestRelayOptions): options is SendRestRelayOptions;
     private getRpcConsumerServerRaw;
 }
-export {};
+export { SendRelayOptions, SendRestRelayOptions };

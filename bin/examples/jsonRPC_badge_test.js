@@ -25,22 +25,20 @@ function getLatestBlock() {
     return __awaiter(this, void 0, void 0, function* () {
         // Create dAccess for Ethereum Mainnet
         // Default rpcInterface for Ethereum Mainnet is jsonRPC
-        console.log("AAAAA");
         const ethereum = yield sdk_1.LavaSDK.create({
-            // private key with an active subscription
+            // badge data of an active badge server
             badge: {
-                badgeServerAddress: "https://badges.lava-cybertron.xyz",
-                projectId: "79eef0054404d5bc750d6d56ef427c2b",
+                badgeServerAddress: "http://localhost:8082",
+                projectId: "canfromlava",
             },
             // chainID for Ethereum mainnet
             chainIds: "ETH1",
             // geolocation 1 for North america - geolocation 2 for Europe providers
             // default value is 1
             geolocation: "1",
-            lavaChainId: "lava-staging-4",
+            pairingListConfig: "pairingList.json",
+            lavaChainId: "lava",
             allowInsecureTransport: true,
-            secure: true,
-            logLevel: "debug"
         });
         // Get latest block number
         const blockNumberResponse = yield ethereum.sendRelay({

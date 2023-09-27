@@ -229,12 +229,9 @@ class LavaSDK {
                     apiInterface = base_chain_parser_1.APIInterfaceRest;
                     continue;
                 }
-                if (options.apiInterface == apiInterface) {
-                    continue;
-                }
                 if (options.apiInterface == supported.apiInterface) {
                     apiInterface = supported.apiInterface;
-                    continue;
+                    break;
                 }
                 if (apiInterface != "" &&
                     apiInterface != supported.apiInterface &&

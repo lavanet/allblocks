@@ -298,23 +298,17 @@ const staging = "staging";
 const testnet = "testnet";
 
 const trkSz = 10;
-const sdkStagingConfig: LavaSDKOptionsLocal = {
+const sdkTestnetConfig: LavaSDKOptionsLocal = {
   badge: {
-    badgeServerAddress: "https://badges.lava-cybertron.xyz",
-    projectId: "79eef0054404d5bc750d6d56ef427c2b",
+    badgeServerAddress: process.env.NEXT_PUBLIC_BADGE_SERVER_ADDRESS || "",
+    projectId: process.env.NEXT_PUBLIC_BADGE_PROJECT_ID || "",
   },
   chainIds: "",
-  // geolocation 1 for North america - geolocation 2 for Europe providers
-  // default value is 1
   geolocation: "2",
-
-  lavaChainId: "lava-staging-4",
-
 };
 
 const getConfig = (chain: ChainDesc, env: string) => {
-  let config = sdkStagingConfig;
-
+  let config = sdkTestnetConfig;
   let newConfig = structuredClone(config);
   newConfig.chainIds = chain.chainId;
 
@@ -330,7 +324,7 @@ export default function Home() {
       </Text>
       <TabGroup>
         <TabList className="mt-8">
-          <Tab>Staging</Tab>
+          <Tab>Testnet</Tab>
         </TabList>
         <TabPanels>
           <TabPanel>
@@ -344,8 +338,8 @@ export default function Home() {
                   relayParse={chain.relayParse}
                   trkSz={trkSz}
                   blockTimeSeconds={chain.blockTimeSeconds}
-                  sdkConfig={getConfig(chain, staging)}
-                  env={staging}
+                  sdkConfig={getConfig(chain, testnet)}
+                  env={testnet}
                 />
               ))}
             </Grid>

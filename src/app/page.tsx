@@ -24,15 +24,16 @@ interface ChainDesc {
 const evmRelay = {
   method: "eth_blockNumber",
   params: [],
+  apiInterface: "jsonrpc",
 };
 
 const cosmosRelay = {
-  method: "GET",
+  connectionType: "GET",
   url: "/cosmos/base/tendermint/v1beta1/blocks/latest",
 };
 
 const aptosRelay = {
-  method: "GET",
+  connectionType: "GET",
   url: "/",
 };
 
@@ -309,15 +310,13 @@ const sdkTestnetConfig: LavaSDKOptions = {
     badgeServerAddress: process.env.NEXT_PUBLIC_BADGE_SERVER_ADDRESS || "",
     projectId: process.env.NEXT_PUBLIC_BADGE_PROJECT_ID || "",
   },
-  chainID: "",
-  rpcInterface: "",
+  chainIds: "",
   geolocation: "2",
 };
 
 const getConfig = (chain: ChainDesc) => {
   let newConfig = structuredClone(sdkTestnetConfig);
-  newConfig.chainID = chain.chainId;
-  newConfig.rpcInterface = chain.rpcInterface;
+  newConfig.chainIds = chain.chainId;
   return newConfig;
 };
 

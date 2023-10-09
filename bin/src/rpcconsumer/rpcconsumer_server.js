@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RPCConsumerServer = void 0;
 const logger_1 = require("../logger/logger");
 const request_builder_1 = require("../lavaprotocol/request_builder");
+const relay_pb_1 = require("../grpc_web_services/lavanet/lava/pairing/relay_pb");
 const errors_1 = __importDefault(require("../sdk/errors"));
 const timeout_1 = require("../common/timeout");
 const common_1 = require("../common/common");
@@ -131,6 +132,12 @@ class RPCConsumerServer {
                 const epoch = sessionInfo.epoch;
                 const reportedProviders = sessionInfo.reportedProviders;
                 relayResult.request = (0, request_builder_1.constructRelayRequest)(lavaChainId, chainID, relayData, providerPublicAddress, singleConsumerSession, epoch, reportedProviders);
+                // Add timeout to the relay for the provider
+                // We're doing this here because we don't want to calculate the hash with this header
+                const timeoutMetadata = new relay_pb_1.Metadata();
+                timeoutMetadata.setName("lava-sdk-relay-timeout");
+                timeoutMetadata.setValue(relayTimeout.toString());
+                relayData.addMetadata(timeoutMetadata);
                 logger_1.Logger.debug(`sending relay to provider ${providerPublicAddress}`);
                 const promise = this.relayInner(singleConsumerSession, relayResult, chainMessage, relayTimeout)
                     .then((relayResponse) => {

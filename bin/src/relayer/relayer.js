@@ -80,11 +80,8 @@ class Relayer {
                 requestSession.setBadge(this.badge);
             }
             relayRequest.setRelaySession(requestSession);
-            // adding metadata to the request itself (this will be applied to the grpc context in the provider side)
-            const metaData = new grpc_web_1.grpc.Metadata(new Map([["lava-sdk-relay-timeout", String(timeout)]]) // adding relay timeout.
-            );
             const requestPromise = new Promise((resolve, reject) => {
-                client.relay(relayRequest, metaData, (err, result) => {
+                client.relay(relayRequest, (err, result) => {
                     if (err != null) {
                         console.log("failed sending relay", err);
                         reject(err);

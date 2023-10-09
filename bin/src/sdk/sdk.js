@@ -22,12 +22,13 @@ const wallet_1 = require("../wallet/wallet");
 const state_tracker_1 = require("../stateTracker/state_tracker");
 const rpcconsumer_server_1 = require("../rpcconsumer/rpcconsumer_server");
 const consumerSessionManager_1 = require("../lavasession/consumerSessionManager");
-const providerOptimizer_1 = require("../lavasession/providerOptimizer");
 const consumerTypes_1 = require("../lavasession/consumerTypes");
 const common_1 = require("../chainlib/common");
 const base_chain_parser_1 = require("../chainlib/base_chain_parser");
 const finalization_consensus_1 = require("../lavaprotocol/finalization_consensus");
 const default_lava_spec_1 = require("../chainlib/default_lava_spec");
+const providerOptimizer_1 = require("../providerOptimizer/providerOptimizer");
+const timeout_1 = require("../common/timeout");
 class LavaSDK {
     /**
      * Create Lava-SDK instance
@@ -41,7 +42,7 @@ class LavaSDK {
      */
     constructor(options) {
         // Extract attributes from options
-        const { privateKey, badge, chainIds: chainIDRpcInterface, pairingListConfig, network, geolocation, lavaChainId, } = options;
+        const { privateKey, badge, chainIds: chainIDRpcInterface, pairingListConfig, network, geolocation, lavaChainId, providerOptimizerStrategy, maxConcurrentProviders, } = options;
         // Validate attributes
         if (!badge && !privateKey) {
             throw errors_1.default.errPrivKeyAndBadgeNotInitialized;
@@ -69,6 +70,9 @@ class LavaSDK {
         this.account = errors_1.default.errAccountNotInitialized;
         this.transport = options.transport;
         this.rpcConsumerServerRouter = new Map();
+        this.providerOptimizerStrategy =
+            providerOptimizerStrategy || providerOptimizer_1.ProviderOptimizerStrategy.Balanced;
+        this.maxConcurrentProviders = maxConcurrentProviders || 3;
     }
     static create(options) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -107,7 +111,8 @@ class LavaSDK {
             // Get default lava spec
             const spec = (0, default_lava_spec_1.getDefaultLavaSpec)();
             // create provider optimizer
-            const optimizer = new providerOptimizer_1.RandomProviderOptimizer();
+            const baseOptimizerLatency = timeout_1.AverageWorldLatency / 2;
+            const optimizer = new providerOptimizer_1.ProviderOptimizer(this.providerOptimizerStrategy, spec.getAverageBlockTime(), baseOptimizerLatency, this.maxConcurrentProviders);
             let rpcConsumerServerLoL;
             let lavaTendermintRpcConsumerSessionManager;
             // if badge is not active set rpc consumer server for lava queries
@@ -142,6 +147,7 @@ class LavaSDK {
             }
             // Fetch init state query
             yield tracker.initialize();
+            const chainProviderOptimizers = new Map();
             // init rpcconsumer servers
             for (const chainId of this.chainIDRpcInterface) {
                 const pairingResponse = tracker.getPairingResponse(chainId);
@@ -186,8 +192,13 @@ class LavaSDK {
                     const rpcEndpoint = new consumerTypes_1.RPCEndpoint("", // We do no need this in sdk as we are not opening any ports
                     chainId, apiInterface, this.geolocation // This is also deprecated
                     );
+                    // create provider optimizer
+                    let chainProviderOptimizer = chainProviderOptimizers.get(chainId);
+                    if (chainProviderOptimizer == undefined) {
+                        chainProviderOptimizer = new providerOptimizer_1.ProviderOptimizer(this.providerOptimizerStrategy, chainParser.chainBlockStats().averageBlockTime, baseOptimizerLatency, this.maxConcurrentProviders);
+                    }
                     // create consumer session manager
-                    const csm = new consumerSessionManager_1.ConsumerSessionManager(this.relayer, rpcEndpoint, optimizer, {
+                    const csm = new consumerSessionManager_1.ConsumerSessionManager(this.relayer, rpcEndpoint, chainProviderOptimizer, {
                         transport: this.transport,
                         allowInsecureTransport: this.allowInsecureTransport,
                     });
@@ -315,6 +326,10 @@ class LavaSDK {
                 this.getRouterKey(chainID, apiInterface));
         }
         return rpcConsumerServer;
+    }
+    // returning rpcConsumerServer for debugging / data reading. changing this object will cause errors.
+    getConsumerMap() {
+        return this.rpcConsumerServerRouter;
     }
 }
 exports.LavaSDK = LavaSDK;

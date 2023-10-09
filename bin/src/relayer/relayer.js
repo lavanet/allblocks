@@ -22,37 +22,10 @@ const relay_pb_service_1 = require("../grpc_web_services/lavanet/lava/pairing/re
 const browser_1 = __importDefault(require("../util/browser"));
 const browserAllowInsecure_1 = __importDefault(require("../util/browserAllowInsecure"));
 const errors_1 = __importDefault(require("../sdk/errors"));
+const common_1 = require("../util/common");
 class Relayer {
     constructor(relayerOptions) {
         var _a;
-        this.byteArrayToString = (byteArray) => {
-            let output = "";
-            for (let i = 0; i < byteArray.length; i++) {
-                const byte = byteArray[i];
-                if (byte === 0x09) {
-                    output += "\\t";
-                }
-                else if (byte === 0x0a) {
-                    output += "\\n";
-                }
-                else if (byte === 0x0d) {
-                    output += "\\r";
-                }
-                else if (byte === 0x5c) {
-                    output += "\\\\";
-                }
-                else if (byte === 0x22) {
-                    output += '\\"';
-                }
-                else if (byte >= 0x20 && byte <= 0x7e) {
-                    output += String.fromCharCode(byte);
-                }
-                else {
-                    output += "\\" + byte.toString(8).padStart(3, "0");
-                }
-            }
-            return output;
-        };
         this.privKey = relayerOptions.privKey;
         this.lavaChainId = relayerOptions.lavaChainId;
         this.prefix = relayerOptions.secure ? "https" : "http";
@@ -89,7 +62,7 @@ class Relayer {
                     reject(new Error("Didn't get an error nor result"));
                 });
             });
-            return this.relayWithTimeout(5000, requestPromise);
+            return this.relayWithTimeout(1250, requestPromise);
         });
     }
     sendRelay(client, relayRequest, timeout) {
@@ -107,8 +80,11 @@ class Relayer {
                 requestSession.setBadge(this.badge);
             }
             relayRequest.setRelaySession(requestSession);
+            // adding metadata to the request itself (this will be applied to the grpc context in the provider side)
+            const metaData = new grpc_web_1.grpc.Metadata(new Map([["lava-sdk-relay-timeout", String(timeout)]]) // adding relay timeout.
+            );
             const requestPromise = new Promise((resolve, reject) => {
-                client.relay(relayRequest, (err, result) => {
+                client.relay(relayRequest, metaData, (err, result) => {
                     if (err != null) {
                         console.log("failed sending relay", err);
                         reject(err);
@@ -125,14 +101,14 @@ class Relayer {
     constructAndSendRelay(options, singleConsumerSession) {
         return __awaiter(this, void 0, void 0, function* () {
             // Extract attributes from options
-            const { data, url, connectionType } = options;
+            const { data, url, connectionType, requestedBlock } = options;
             const enc = new TextEncoder();
             // create request private data
             const requestPrivateData = new relay_pb_1.RelayPrivateData();
             requestPrivateData.setConnectionType(connectionType);
             requestPrivateData.setApiUrl(url);
             requestPrivateData.setData(enc.encode(data));
-            requestPrivateData.setRequestBlock(-1); // TODO: when block parsing is implemented, replace this with the request parsed block. -1 == not applicable
+            requestPrivateData.setRequestBlock(requestedBlock);
             requestPrivateData.setApiInterface(options.apiInterface);
             requestPrivateData.setSalt(this.getNewSalt());
             const contentHash = this.calculateContentHashForRelayData(requestPrivateData);
@@ -248,13 +224,13 @@ class Relayer {
     calculateContentHashForRelayData(relayRequestData) {
         const requestBlock = relayRequestData.getRequestBlock();
         const requestBlockBytes = this.convertRequestedBlockToUint8Array(requestBlock);
-        const apiInterfaceBytes = this.encodeUtf8(relayRequestData.getApiInterface());
-        const connectionTypeBytes = this.encodeUtf8(relayRequestData.getConnectionType());
-        const apiUrlBytes = this.encodeUtf8(relayRequestData.getApiUrl());
+        const apiInterfaceBytes = (0, common_1.encodeUtf8)(relayRequestData.getApiInterface());
+        const connectionTypeBytes = (0, common_1.encodeUtf8)(relayRequestData.getConnectionType());
+        const apiUrlBytes = (0, common_1.encodeUtf8)(relayRequestData.getApiUrl());
         const dataBytes = relayRequestData.getData();
-        const dataUint8Array = dataBytes instanceof Uint8Array ? dataBytes : this.encodeUtf8(dataBytes);
+        const dataUint8Array = dataBytes instanceof Uint8Array ? dataBytes : (0, common_1.encodeUtf8)(dataBytes);
         const saltBytes = relayRequestData.getSalt();
-        const saltUint8Array = saltBytes instanceof Uint8Array ? saltBytes : this.encodeUtf8(saltBytes);
+        const saltUint8Array = saltBytes instanceof Uint8Array ? saltBytes : (0, common_1.encodeUtf8)(saltBytes);
         const msgData = this.concatUint8Arrays([
             apiInterfaceBytes,
             connectionTypeBytes,
@@ -279,9 +255,6 @@ class Relayer {
             requestBlockBytes[i] = Number((number >> BigInt(8 * i)) & BigInt(0xff));
         }
         return requestBlockBytes;
-    }
-    encodeUtf8(str) {
-        return new TextEncoder().encode(str);
     }
     concatUint8Arrays(arrays) {
         const totalLength = arrays.reduce((acc, arr) => acc + arr.length, 0);
@@ -323,7 +296,7 @@ class Relayer {
                     case "object":
                         let valueInnerStr = "";
                         if (value instanceof Uint8Array) {
-                            valueInnerStr = this.byteArrayToString(value);
+                            valueInnerStr = (0, common_1.byteArrayToString)(value, true);
                             return key + ':"' + valueInnerStr + '" ';
                         }
                         if (value instanceof Array) {
@@ -356,7 +329,7 @@ class Relayer {
                                     objValStr = handleNumStr(objkey, objVal);
                                     break;
                                 case "object":
-                                    objValStr = objkey + ":" + this.byteArrayToString(objVal);
+                                    objValStr = objkey + ":" + (0, common_1.byteArrayToString)(objVal, true);
                                     break;
                             }
                             if (objValStr != "") {

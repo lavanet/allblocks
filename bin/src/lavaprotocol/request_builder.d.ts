@@ -1,4 +1,4 @@
-import { RelayRequest, RelayPrivateData, RelayReply, ReportedProvider } from "../grpc_web_services/lavanet/lava/pairing/relay_pb";
+import { RelayRequest, RelayPrivateData, RelayReply, ReportedProvider, Metadata } from "../grpc_web_services/lavanet/lava/pairing/relay_pb";
 import { SingleConsumerSession } from "../lavasession/consumerTypes";
 export interface SendRelayData {
     connectionType: string;
@@ -7,6 +7,7 @@ export interface SendRelayData {
     apiInterface: string;
     chainId: string;
     requestedBlock: number;
+    headers: Metadata[];
 }
 export declare function newRelayData(relayData: SendRelayData): RelayPrivateData;
 export declare function constructRelayRequest(lavaChainID: string, chainID: string, relayData: RelayPrivateData, providerAddress: string, singleConsumerSession: SingleConsumerSession, epoch: number, reportedProviders: Array<ReportedProvider>): RelayRequest;

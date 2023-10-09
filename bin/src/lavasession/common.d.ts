@@ -5,5 +5,5 @@ export declare const RELAY_NUMBER_INCREMENT = 1;
 export declare const MAXIMUM_NUMBER_OF_FAILURES_ALLOWED_PER_CONSUMER_SESSION = 3;
 export declare const PERCENTILE_TO_CALCULATE_LATENCY = 0.9;
 export declare const MIN_PROVIDERS_FOR_SYNC = 0.6;
-export declare const AVERAGE_WORLD_LATENCY = 300;
 export declare const DEFAULT_DECIMAL_PRECISION = 18;
+export declare const MAX_CONSECUTIVE_CONNECTION_ATTEMPTS = 5;

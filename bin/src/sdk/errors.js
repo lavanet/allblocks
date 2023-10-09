@@ -15,4 +15,5 @@ SDKErrors.errPrivKeyAndBadgeBothInitialized = new Error("Consumer private key an
 SDKErrors.errRestRelayMethodNotSupported = new Error("SendRestRelay not supported if the SDK is initialized with RPC rpcInterface (tendermintRPC/jsonRPC), use sendRelay method");
 SDKErrors.sessionSyncLoss = new Error("session out of sync error");
 SDKErrors.relayTimeout = new Error("Timeout exceeded");
+SDKErrors.noResponseTimeout = new Error("No responses returned in time");
 exports.default = SDKErrors;

@@ -1,7 +1,8 @@
-import { ParseDirective, ApiCollection, Api, Header } from "../grpc_web_services/lavanet/lava/spec/api_collection_pb";
+import { ParseDirective, ApiCollection, Api, Header, CollectionData } from "../grpc_web_services/lavanet/lava/spec/api_collection_pb";
 import { Metadata } from "../grpc_web_services/lavanet/lava/pairing/relay_pb";
 import { Spec } from "../grpc_web_services/lavanet/lava/spec/spec_pb";
 import Long from "long";
+import { ParsedMessage } from "./chain_message";
 export declare const APIInterfaceJsonRPC = "jsonrpc";
 export declare const APIInterfaceTendermintRPC = "tendermintrpc";
 export declare const APIInterfaceRest = "rest";
@@ -13,6 +14,7 @@ export declare const HeadersPassSend: 0;
 export interface SendRelayOptions {
     method: string;
     params: Array<any>;
+    id?: number | string;
     chainId?: string;
     metadata?: Metadata[];
     apiInterface?: string;
@@ -96,31 +98,11 @@ export declare abstract class BaseChainParser {
     dataReliabilityParams(): DataReliabilityParams;
     init(spec: Spec): void;
     protected isRest(options: SendRelayOptions | SendRestRelayOptions): options is SendRestRelayOptions;
-    protected handleHeaders(metadata: Metadata[] | undefined, apiCollection: ApiCollection, headersDirection: number): HeadersHandler;
+    handleHeaders(metadata: Metadata[] | undefined, apiCollection: ApiCollection, headersDirection: number): HeadersHandler;
     protected isAddon(addon: string): boolean;
-    protected escapeRegExp(s: string): string;
     protected matchSpecApiByName(name: string, connectionType: string): [ApiContainer | undefined, boolean];
-    abstract parseMsg(options: SendRelayOptions | SendRestRelayOptions): ChainMessage;
+    abstract parseMsg(options: SendRelayOptions | SendRestRelayOptions): ParsedMessage;
     chainBlockStats(): ChainBlockStats;
-}
-export interface RawRequestData {
-    url: string;
-    data: string;
-}
-export declare class ChainMessage {
-    private requestedBlock;
-    private api;
-    private apiCollection;
-    private messageData;
-    private messageUrl;
-    headers: Metadata[];
-    constructor(requestedBlock: number, api: Api, apiCollection: ApiCollection, data: string, messageUrl: string);
-    getRawRequestData(): RawRequestData;
-    getMessageUrl(): string;
-    getRequestedBlock(): number;
-    updateLatestBlockInMessage(latestBlock: number, modififyContent: boolean): boolean;
-    appendHeader(metaData: Metadata[]): void;
-    getApi(): Api;
-    getApiCollection(): ApiCollection;
+    getParsingByTag(tag: number): [ParseDirective | undefined, CollectionData | undefined, boolean];
 }
 export {};

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ChainMessage = exports.BaseChainParser = exports.CollectionKeyToString = exports.ApiKeyToString = exports.HeadersPassSend = exports.APIInterfaceGrpc = exports.APIInterfaceRest = exports.APIInterfaceTendermintRPC = exports.APIInterfaceJsonRPC = void 0;
+exports.BaseChainParser = exports.CollectionKeyToString = exports.ApiKeyToString = exports.HeadersPassSend = exports.APIInterfaceGrpc = exports.APIInterfaceRest = exports.APIInterfaceTendermintRPC = exports.APIInterfaceJsonRPC = void 0;
 const api_collection_pb_1 = require("../grpc_web_services/lavanet/lava/spec/api_collection_pb");
 const logger_1 = require("../logger/logger");
 const long_1 = __importDefault(require("long"));
@@ -121,10 +121,10 @@ class BaseChainParser {
                     }
                     let apiName = api.getName();
                     if (this.apiInterface == exports.APIInterfaceRest) {
-                        const re = /{[^}]+}/;
-                        apiName = api.getName().replace(re, "replace-me-with-regex");
-                        apiName = apiName.replace(/replace-me-with-regex/g, "[^\\/\\s]+");
-                        apiName = this.escapeRegExp(apiName); // Assuming you have a RegExp.escape function
+                        const re = /{[^}]+}/g;
+                        const processedName = apiName.replace(re, "replace-me-with-regex");
+                        const quotedProcessedName = processedName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                        apiName = quotedProcessedName.replace(/replace-me-with-regex/g, "[^\\/\\s]+");
                     }
                     const apiKey = {
                         name: apiName,
@@ -247,9 +247,6 @@ class BaseChainParser {
     isAddon(addon) {
         return this.allowedAddons.has(addon);
     }
-    escapeRegExp(s) {
-        return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    }
     matchSpecApiByName(name, connectionType) {
         let foundNameOnDifferentConnectionType = undefined;
         for (const [, api] of this.serverApis.entries()) {
@@ -293,37 +290,12 @@ class BaseChainParser {
             blocksInFinalizationProof: blocksInFinalizationProof,
         };
     }
+    getParsingByTag(tag) {
+        const val = this.taggedApis.get(tag);
+        if (val === undefined) {
+            return [undefined, undefined, false];
+        }
+        return [val.parsing, val.apiCollection.getCollectionData(), true];
+    }
 }
 exports.BaseChainParser = BaseChainParser;
-class ChainMessage {
-    constructor(requestedBlock, api, apiCollection, data, messageUrl) {
-        this.headers = [];
-        this.requestedBlock = requestedBlock;
-        this.apiCollection = apiCollection;
-        this.api = api;
-        this.messageData = data;
-        this.messageUrl = messageUrl;
-    }
-    getRawRequestData() {
-        return { url: this.messageUrl, data: this.messageData };
-    }
-    getMessageUrl() {
-        return this.messageUrl;
-    }
-    getRequestedBlock() {
-        return this.requestedBlock;
-    }
-    updateLatestBlockInMessage(latestBlock, modififyContent) {
-        return false; // TODO: implement
-    }
-    appendHeader(metaData) {
-        this.headers = [...this.headers, ...metaData];
-    }
-    getApi() {
-        return this.api;
-    }
-    getApiCollection() {
-        return this.apiCollection;
-    }
-}
-exports.ChainMessage = ChainMessage;

@@ -1,8 +1,8 @@
 import { ConsumerSessionsMap, ConsumerSessionsWithProvider, ProviderOptimizer, RPCEndpoint, SingleConsumerSession } from "./consumerTypes";
 import { Relayer } from "../relayer/relayer";
 import { grpc } from "@improbable-eng/grpc-web";
-export declare const ALLOWED_PROBE_RETRIES = 3;
-export declare const TIMEOUT_BETWEEN_PROBES: number;
+export declare const ALLOWED_PROBE_RETRIES = 5;
+export declare const TIMEOUT_BETWEEN_PROBES = 200;
 import { ReportedProvider } from "../grpc_web_services/lavanet/lava/pairing/relay_pb";
 export declare class ConsumerSessionManager {
     private rpcEndpoint;
@@ -11,7 +11,7 @@ export declare class ConsumerSessionManager {
     private numberOfResets;
     private allowedUpdateForCurrentEpoch;
     private pairingAddresses;
-    validAddresses: string[];
+    validAddresses: Set<string>;
     private addonAddresses;
     private reportedProviders;
     private pairingPurge;
@@ -31,7 +31,7 @@ export declare class ConsumerSessionManager {
     getPairingAddressesLength(): number;
     updateAllProviders(epoch: number, pairingList: ConsumerSessionsWithProvider[]): Promise<Error | undefined>;
     removeAddonAddress(addon?: string, extensions?: string[]): void;
-    calculateAddonValidAddresses(addon: string, extensions: string[]): string[];
+    calculateAddonValidAddresses(addon: string, extensions: string[]): Set<string>;
     getSessions(cuNeededForSession: number, initUnwantedProviders: Set<string>, requestedBlock: number, addon: string, extensions: string[]): ConsumerSessionsMap | Error;
     onSessionUnused(consumerSession: SingleConsumerSession): Error | undefined;
     onSessionFailure(consumerSession: SingleConsumerSession, errorReceived?: Error | null): Error | undefined;
@@ -41,12 +41,14 @@ export declare class ConsumerSessionManager {
     private removeAddressFromValidAddresses;
     private getValidConsumerSessionsWithProvider;
     private setValidAddressesToDefaultValue;
-    getValidAddresses(addon: string, extensions: string[]): string[];
+    getValidAddresses(addon: string, extensions: string[]): Set<string>;
     private getValidProviderAddress;
     private resetValidAddress;
     private cacheAddonAddresses;
     private validatePairingListNotEmpty;
-    probeProviders(pairingList: ConsumerSessionsWithProvider[], epoch: number, retry?: number): Promise<any>;
+    probeProviders(pairingList: Set<ConsumerSessionsWithProvider>, epoch: number, retry?: number): Promise<any>;
+    private blockDisabledProvidersByProbe;
+    private probeProvider;
     private getTransport;
     private timeoutBetweenProbes;
 }

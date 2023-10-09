@@ -15,8 +15,8 @@ const errors_1 = require("./errors");
 const relayer_1 = require("../relayer/relayer");
 const relay_pb_1 = require("../grpc_web_services/lavanet/lava/pairing/relay_pb");
 const common_1 = require("../util/common");
-const providerOptimizer_1 = require("./providerOptimizer");
-const consumerSessionManager_2 = require("./consumerSessionManager");
+const providerOptimizer_1 = require("../providerOptimizer/providerOptimizer");
+const timeout_1 = require("../common/timeout");
 const NUMBER_OF_PROVIDERS = 10;
 const NUMBER_OF_RESETS_TO_TEST = 10;
 const FIRST_EPOCH_HEIGHT = 20;
@@ -28,17 +28,23 @@ const RELAY_NUMBER_AFTER_FIRST_FAIL = 1;
 const LATEST_RELAY_CU_AFTER_DONE = 0;
 const NUMBER_OF_ALLOWED_SESSIONS_PER_CONSUMER = 10;
 const CU_SUM_ON_FAILURE = 0;
-function setupConsumerSessionManager(relayer) {
+function setupConsumerSessionManager(relayer, optimizer) {
     if (!relayer) {
         relayer = setupRelayer();
-        jest.spyOn(relayer, "probeProvider").mockImplementation(() => {
+        jest
+            .spyOn(relayer, "probeProvider")
+            .mockImplementation((providerAddress, apiInterface, guid, specId) => {
             const response = new relay_pb_1.ProbeReply();
             response.setLatestBlock(42);
             response.setLavaEpoch(20);
+            response.setGuid(guid);
             return Promise.resolve(response);
         });
     }
-    const cm = new consumerSessionManager_1.ConsumerSessionManager(relayer, new consumerTypes_1.RPCEndpoint("stub", "stub", "stub", "0"), new providerOptimizer_1.RandomProviderOptimizer());
+    if (!optimizer) {
+        optimizer = setupProviderOptimizer(providerOptimizer_1.ProviderOptimizerStrategy.Balanced);
+    }
+    const cm = new consumerSessionManager_1.ConsumerSessionManager(relayer, new consumerTypes_1.RPCEndpoint("stub", "stub", "stub", "0"), optimizer);
     return cm;
 }
 function setupRelayer() {
@@ -48,6 +54,9 @@ function setupRelayer() {
         privKey: "",
         secure: true,
     });
+}
+function setupProviderOptimizer(strategy, wantedNumProviders = 1) {
+    return new providerOptimizer_1.ProviderOptimizer(strategy, 1, timeout_1.AverageWorldLatency / 2, wantedNumProviders);
 }
 describe("ConsumerSessionManager", () => {
     afterEach(() => {
@@ -77,7 +86,7 @@ describe("ConsumerSessionManager", () => {
             const cm = setupConsumerSessionManager();
             const pairingList = createPairingList("", true);
             yield cm.updateAllProviders(FIRST_EPOCH_HEIGHT, pairingList);
-            cm.validAddresses = [];
+            cm.validAddresses = new Set();
             const consumerSessions = cm.getSessions(CU_FOR_FIRST_REQUEST, new Set(), SERVICED_BLOCK_NUMBER, "", []);
             if (consumerSessions instanceof Error) {
                 throw consumerSessions;
@@ -99,7 +108,7 @@ describe("ConsumerSessionManager", () => {
             const pairingList = createPairingList("", true);
             yield cm.updateAllProviders(FIRST_EPOCH_HEIGHT, pairingList);
             while (true) {
-                if (cm.validAddresses.length === 0) {
+                if (cm.validAddresses.size === 0) {
                     break;
                 }
                 const consumerSessions = cm.getSessions(CU_FOR_FIRST_REQUEST, new Set(), SERVICED_BLOCK_NUMBER, "", []);
@@ -114,7 +123,7 @@ describe("ConsumerSessionManager", () => {
             if (consumerSessions instanceof Error) {
                 throw consumerSessions;
             }
-            expect(cm.validAddresses.length).toEqual(cm.getPairingAddressesLength());
+            expect(cm.validAddresses.size).toEqual(cm.getPairingAddressesLength());
             for (const consumerSession of consumerSessions.values()) {
                 expect(consumerSession.epoch).toEqual(cm.getCurrentEpoch());
                 expect(consumerSession.session.latestRelayCu).toEqual(CU_FOR_FIRST_REQUEST);
@@ -128,7 +137,7 @@ describe("ConsumerSessionManager", () => {
             // let numberOfResets = 0;
             for (let numberOfResets = 0; numberOfResets < NUMBER_OF_RESETS_TO_TEST; numberOfResets++) {
                 while (true) {
-                    if (cm.validAddresses.length === 0) {
+                    if (cm.validAddresses.size === 0) {
                         break;
                     }
                     const consumerSessions = cm.getSessions(CU_FOR_FIRST_REQUEST, new Set(), SERVICED_BLOCK_NUMBER, "", []);
@@ -140,17 +149,17 @@ describe("ConsumerSessionManager", () => {
                             }
                         }
                     }
-                    if (cm.validAddresses.length === 0 &&
+                    if (cm.validAddresses.size === 0 &&
                         consumerSessions instanceof errors_1.PairingListEmptyError) {
                         break;
                     }
                 }
-                expect(cm.validAddresses.length).toEqual(0);
+                expect(cm.validAddresses.size).toEqual(0);
                 const consumerSessions = cm.getSessions(CU_FOR_FIRST_REQUEST, new Set(), SERVICED_BLOCK_NUMBER, "", []);
                 if (consumerSessions instanceof Error) {
                     throw consumerSessions;
                 }
-                expect(cm.validAddresses.length).toEqual(cm.getPairingAddressesLength());
+                expect(cm.validAddresses.size).toEqual(cm.getPairingAddressesLength());
                 for (const consumerSession of consumerSessions.values()) {
                     expect(consumerSession.epoch).toEqual(cm.getCurrentEpoch());
                     expect(consumerSession.session.latestRelayCu).toEqual(CU_FOR_FIRST_REQUEST);
@@ -291,7 +300,7 @@ describe("ConsumerSessionManager", () => {
             const cm = setupConsumerSessionManager();
             const pairingList = createPairingList("", false);
             yield cm.updateAllProviders(FIRST_EPOCH_HEIGHT, pairingList);
-            expect(cm.validAddresses.length).toEqual(NUMBER_OF_PROVIDERS);
+            expect(cm.validAddresses.size).toEqual(NUMBER_OF_PROVIDERS);
             expect(cm.getPairingAddressesLength()).toEqual(NUMBER_OF_PROVIDERS);
             const sessions = cm.getSessions(CU_FOR_FIRST_REQUEST, new Set(), SERVICED_BLOCK_NUMBER, "", []);
             expect(sessions).toBeInstanceOf(errors_1.PairingListEmptyError);
@@ -302,7 +311,7 @@ describe("ConsumerSessionManager", () => {
                 const pairingList = createPairingList("", true);
                 yield cm.updateAllProviders(FIRST_EPOCH_HEIGHT, pairingList);
                 expect(cm.getValidAddresses(addon, [])).not.toEqual(0);
-                const initialProvidersLength = cm.getValidAddresses(addon, []).length;
+                const initialProvidersLength = cm.getValidAddresses(addon, []).size;
                 for (let i = 0; i < initialProvidersLength; i++) {
                     const consumerSessions = cm.getSessions(CU_FOR_FIRST_REQUEST, new Set(), SERVICED_BLOCK_NUMBER, addon, []);
                     if (consumerSessions instanceof Error) {
@@ -312,9 +321,9 @@ describe("ConsumerSessionManager", () => {
                         cm.onSessionFailure(consumerSession.session, new errors_1.ReportAndBlockProviderError());
                     }
                 }
-                expect(cm.getValidAddresses(addon, []).length).toEqual(0);
+                expect(cm.getValidAddresses(addon, []).size).toEqual(0);
                 if (addon !== "") {
-                    expect(cm.getValidAddresses("addon", []).length).toEqual(0);
+                    expect(cm.getValidAddresses("addon", []).size).toEqual(0);
                 }
                 const consumerSessions = cm.getSessions(CU_FOR_FIRST_REQUEST, new Set(), SERVICED_BLOCK_NUMBER, addon, []);
                 if (consumerSessions instanceof Error) {
@@ -358,7 +367,7 @@ describe("ConsumerSessionManager", () => {
                 const pairingList = createPairingList("", true);
                 yield cm.updateAllProviders(FIRST_EPOCH_HEIGHT, pairingList);
                 expect(cm.getValidAddresses(addon, extensions)).not.toEqual(0);
-                const initialProvidersLength = cm.getValidAddresses(addon, extensions).length;
+                const initialProvidersLength = cm.getValidAddresses(addon, extensions).size;
                 for (let i = 0; i < initialProvidersLength; i++) {
                     const consumerSessions = cm.getSessions(CU_FOR_FIRST_REQUEST, new Set(), SERVICED_BLOCK_NUMBER, addon, extensions);
                     if (consumerSessions instanceof Error) {
@@ -368,9 +377,9 @@ describe("ConsumerSessionManager", () => {
                         cm.onSessionFailure(consumerSession.session, new errors_1.ReportAndBlockProviderError());
                     }
                 }
-                expect(cm.getValidAddresses(addon, extensions).length).toEqual(0);
+                expect(cm.getValidAddresses(addon, extensions).size).toEqual(0);
                 if (extensions.length !== 0 || addon !== "") {
-                    expect(cm.getValidAddresses("addon", extensions).length).toEqual(0);
+                    expect(cm.getValidAddresses("addon", extensions).size).toEqual(0);
                 }
                 const consumerSessions = cm.getSessions(CU_FOR_FIRST_REQUEST, new Set(), SERVICED_BLOCK_NUMBER, addon, extensions);
                 if (consumerSessions instanceof Error) {
@@ -387,11 +396,12 @@ describe("ConsumerSessionManager", () => {
             const cm = setupConsumerSessionManager();
             const pairingList = createPairingList("", true);
             yield cm.updateAllProviders(FIRST_EPOCH_HEIGHT, pairingList);
-            expect(cm.validAddresses.length).toEqual(NUMBER_OF_PROVIDERS);
+            expect(cm.validAddresses.size).toEqual(NUMBER_OF_PROVIDERS);
             expect(cm.getPairingAddressesLength()).toEqual(NUMBER_OF_PROVIDERS);
             expect(cm.getCurrentEpoch()).toEqual(FIRST_EPOCH_HEIGHT);
+            const validAddressesArray = Array.from(cm.validAddresses);
             for (let i = 0; i < NUMBER_OF_PROVIDERS; i++) {
-                expect(cm.validAddresses[i]).toEqual(`provider${i}`);
+                expect(validAddressesArray[i]).toEqual(`provider${i}`);
             }
         }));
         it("updates all providers with same epoch", () => __awaiter(void 0, void 0, void 0, function* () {
@@ -400,11 +410,12 @@ describe("ConsumerSessionManager", () => {
             yield cm.updateAllProviders(FIRST_EPOCH_HEIGHT, pairingList);
             const err = yield cm.updateAllProviders(FIRST_EPOCH_HEIGHT, pairingList);
             expect(err === null || err === void 0 ? void 0 : err.message).toEqual("Trying to update provider list for older epoch");
-            expect(cm.validAddresses.length).toEqual(NUMBER_OF_PROVIDERS);
+            expect(cm.validAddresses.size).toEqual(NUMBER_OF_PROVIDERS);
             expect(cm.getPairingAddressesLength()).toEqual(NUMBER_OF_PROVIDERS);
             expect(cm.getCurrentEpoch()).toEqual(FIRST_EPOCH_HEIGHT);
+            const validAddressesArray = Array.from(cm.validAddresses);
             for (let i = 0; i < NUMBER_OF_PROVIDERS; i++) {
-                expect(cm.validAddresses[i]).toEqual(`provider${i}`);
+                expect(validAddressesArray[i]).toEqual(`provider${i}`);
             }
         }));
         it("retries failing providers", () => __awaiter(void 0, void 0, void 0, function* () {
@@ -413,35 +424,93 @@ describe("ConsumerSessionManager", () => {
             let providerRetries = 0;
             jest
                 .spyOn(relayer, "probeProvider")
-                .mockImplementation((providerAddress) => __awaiter(void 0, void 0, void 0, function* () {
+                .mockImplementation((providerAddress, apiInterface, guid, specId) => __awaiter(void 0, void 0, void 0, function* () {
                 if (providerAddress === pairingList[1].publicLavaAddress) {
                     providerRetries++;
                     throw new Error("test");
                 }
                 const response = new relay_pb_1.ProbeReply();
                 response.setLatestBlock(42);
+                response.setLavaEpoch(20);
+                response.setGuid(guid);
                 return Promise.resolve(response);
             }));
             const cm = setupConsumerSessionManager(relayer);
             // @ts-expect-error - we are spying on a private method
+            jest.spyOn(cm, "timeoutBetweenProbes").mockImplementation(() => 1); // this makes it not sleep
+            yield cm.updateAllProviders(FIRST_EPOCH_HEIGHT, pairingList);
+            yield (0, common_1.sleep)(consumerSessionManager_1.TIMEOUT_BETWEEN_PROBES * consumerSessionManager_1.ALLOWED_PROBE_RETRIES);
+            // 1 for the initial call and 5 retries
+            expect(providerRetries).toEqual(consumerSessionManager_1.ALLOWED_PROBE_RETRIES); // after ALLOWED_PROBE_RETRIES he gets banned
+        }));
+        it("disables provider until first successful probe", () => __awaiter(void 0, void 0, void 0, function* () {
+            const pairingList = createPairingList("", true);
+            const relayer = setupRelayer();
+            let providerRetries = 0;
+            jest
+                .spyOn(relayer, "probeProvider")
+                .mockImplementation((providerAddress, apiInterface, guid, specId) => __awaiter(void 0, void 0, void 0, function* () {
+                if (providerAddress === pairingList[1].publicLavaAddress &&
+                    providerRetries < 1) {
+                    providerRetries++;
+                    throw new Error("test");
+                }
+                const response = new relay_pb_1.ProbeReply();
+                response.setLatestBlock(42);
+                response.setLavaEpoch(20);
+                response.setGuid(guid);
+                return Promise.resolve(response);
+            }));
+            const optimizer = setupProviderOptimizer(providerOptimizer_1.ProviderOptimizerStrategy.Latency, pairingList.length);
+            const cm = setupConsumerSessionManager(relayer, optimizer);
+            // @ts-expect-error - we are spying on a private method
             jest.spyOn(cm, "timeoutBetweenProbes").mockImplementation(() => 1);
             yield cm.updateAllProviders(FIRST_EPOCH_HEIGHT, pairingList);
-            yield (0, common_1.sleep)(consumerSessionManager_2.TIMEOUT_BETWEEN_PROBES * consumerSessionManager_2.ALLOWED_PROBE_RETRIES);
-            // 1 for the initial call and 3 retries
-            expect(providerRetries).toEqual(consumerSessionManager_2.ALLOWED_PROBE_RETRIES + 1);
+            expect(cm.validAddresses).toContain(pairingList[1].publicLavaAddress);
+            yield (0, common_1.sleep)((consumerSessionManager_1.TIMEOUT_BETWEEN_PROBES / 2) * consumerSessionManager_1.ALLOWED_PROBE_RETRIES);
+            expect(cm.validAddresses).toContain(pairingList[1].publicLavaAddress);
+        }));
+        it("disables provider for failed probes", () => __awaiter(void 0, void 0, void 0, function* () {
+            const pairingList = createPairingList("", true);
+            const relayer = setupRelayer();
+            let providerRetries = 0;
+            jest
+                .spyOn(relayer, "probeProvider")
+                .mockImplementation((providerAddress, apiInterface, guid, specId) => __awaiter(void 0, void 0, void 0, function* () {
+                if (providerAddress == pairingList[1].publicLavaAddress) {
+                    providerRetries++;
+                    throw new Error("test");
+                }
+                const response = new relay_pb_1.ProbeReply();
+                response.setLatestBlock(42);
+                response.setLavaEpoch(20);
+                response.setGuid(guid);
+                return Promise.resolve(response);
+            }));
+            const optimizer = setupProviderOptimizer(providerOptimizer_1.ProviderOptimizerStrategy.Latency, pairingList.length);
+            const cm = setupConsumerSessionManager(relayer, optimizer);
+            // @ts-expect-error - we are spying on a private method
+            jest.spyOn(cm, "timeoutBetweenProbes").mockImplementation(() => 1);
+            yield cm.updateAllProviders(FIRST_EPOCH_HEIGHT, pairingList);
+            expect(cm.validAddresses).toContain(pairingList[1].publicLavaAddress);
+            yield (0, common_1.sleep)(consumerSessionManager_1.TIMEOUT_BETWEEN_PROBES * consumerSessionManager_1.ALLOWED_PROBE_RETRIES + 100);
+            expect(cm.validAddresses).not.toContain(pairingList[1].publicLavaAddress);
         }));
         it("returns the median latest block", () => __awaiter(void 0, void 0, void 0, function* () {
             const relayer = setupRelayer();
-            let startBlock = 1;
-            jest.spyOn(relayer, "probeProvider").mockImplementation(() => {
+            let startEpoch = 1;
+            jest
+                .spyOn(relayer, "probeProvider")
+                .mockImplementation((providerAddress, apiInterface, guid, specId) => {
                 const response = new relay_pb_1.ProbeReply();
-                response.setLatestBlock(startBlock++);
+                response.setLavaEpoch(startEpoch++);
+                response.setGuid(guid);
                 return Promise.resolve(response);
             });
             const cm = setupConsumerSessionManager(relayer);
             const pairingList = createPairingList("", true);
             yield cm.updateAllProviders(FIRST_EPOCH_HEIGHT, pairingList);
-            // expect(cm.getLatestBlock()).toEqual(NUMBER_OF_PROVIDERS / 2);
+            expect(cm.getEpochFromEpochTracker()).toEqual(NUMBER_OF_PROVIDERS / 2);
         }));
     });
 });

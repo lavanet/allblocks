@@ -18,6 +18,8 @@ const request_builder_1 = require("../lavaprotocol/request_builder");
 const errors_1 = __importDefault(require("../sdk/errors"));
 const timeout_1 = require("../common/timeout");
 const common_1 = require("../common/common");
+const api_collection_pb_1 = require("../grpc_web_services/lavanet/lava/spec/api_collection_pb");
+const common_2 = require("../util/common");
 const MaxRelayRetries = 4;
 class RPCConsumerServer {
     constructor(relayer, consumerSessionManager, chainParser, geolocation, rpcEndpoint, lavaChainId, finalizationConsensus) {
@@ -29,6 +31,10 @@ class RPCConsumerServer {
         this.lavaChainId = lavaChainId;
         this.consumerAddress = "TODO"; // TODO: this needs to be the public address that the provider signs finalization data with, check on badges if it's the signer or the badge project key
         this.finalizationConsensus = finalizationConsensus;
+    }
+    // returning getSessionManager for debugging / data reading.
+    getSessionManager() {
+        return this.consumerSessionManager;
     }
     setChainParser(chainParser) {
         this.chainParser = chainParser;
@@ -44,7 +50,7 @@ class RPCConsumerServer {
         return __awaiter(this, void 0, void 0, function* () {
             const chainMessage = this.chainParser.parseMsg(options);
             const unwantedProviders = new Set();
-            const relayData = Object.assign(Object.assign({}, chainMessage.getRawRequestData()), { connectionType: (_b = (_a = chainMessage.getApiCollection().getCollectionData()) === null || _a === void 0 ? void 0 : _a.getType()) !== null && _b !== void 0 ? _b : "", apiInterface: this.rpcEndpoint.apiInterface, chainId: this.rpcEndpoint.chainId, requestedBlock: chainMessage.getRequestedBlock() });
+            const relayData = Object.assign(Object.assign({}, chainMessage.getRawRequestData()), { connectionType: (_b = (_a = chainMessage.getApiCollection().getCollectionData()) === null || _a === void 0 ? void 0 : _a.getType()) !== null && _b !== void 0 ? _b : "", apiInterface: this.rpcEndpoint.apiInterface, chainId: this.rpcEndpoint.chainId, requestedBlock: chainMessage.getRequestedBlock(), headers: chainMessage.getRPCMessage().getHeaders() });
             const relayPrivateData = (0, request_builder_1.newRelayData)(relayData);
             let blockOnSyncLoss = true;
             const errors = new Array();
@@ -94,21 +100,27 @@ class RPCConsumerServer {
             const relayTimeout = extraRelayTimeout +
                 (0, timeout_1.getTimePerCu)(chainMessage.getApi().getComputeUnits()) +
                 timeout_1.AverageWorldLatency;
-            try {
-                const consumerSessionsMap = this.consumerSessionManager.getSessions(chainMessage.getApi().getComputeUnits(), unwantedProviders, chainMessage.getRequestedBlock(), "", []);
-                if (consumerSessionsMap instanceof Error) {
-                    return consumerSessionsMap;
+            const consumerSessionsMap = this.consumerSessionManager.getSessions(chainMessage.getApi().getComputeUnits(), unwantedProviders, common_1.LATEST_BLOCK, "", []);
+            if (consumerSessionsMap instanceof Error) {
+                return consumerSessionsMap;
+            }
+            if (consumerSessionsMap.size == 0) {
+                return new Error("returned empty consumerSessionsMap");
+            }
+            let finalRelayResult;
+            let responsesReceived = 0;
+            const trySetFinalRelayResult = (res) => {
+                const isError = res instanceof Error || Array.isArray(res);
+                if (!isError && finalRelayResult === undefined) {
+                    finalRelayResult = res;
                 }
-                // TODO: send to several
-                // return this.sendRelayToAllProvidersAndRace(
-                //   consumerSessionsMap,
-                //   extraRelayTimeout
-                // );
-                const firstEntry = consumerSessionsMap.entries().next();
-                if (firstEntry.done) {
-                    return new Error("returned empty consumerSessionsMap");
+                if (finalRelayResult === undefined &&
+                    responsesReceived == consumerSessionsMap.size) {
+                    finalRelayResult = res;
                 }
-                const [providerPublicAddress, sessionInfo] = firstEntry.value;
+            };
+            const promises = [];
+            for (const [providerPublicAddress, sessionInfo] of consumerSessionsMap) {
                 const relayResult = {
                     providerAddress: providerPublicAddress,
                     request: undefined,
@@ -118,49 +130,67 @@ class RPCConsumerServer {
                 const singleConsumerSession = sessionInfo.session;
                 const epoch = sessionInfo.epoch;
                 const reportedProviders = sessionInfo.reportedProviders;
-                const relayRequest = (0, request_builder_1.constructRelayRequest)(lavaChainId, chainID, relayData, providerPublicAddress, singleConsumerSession, epoch, reportedProviders);
-                relayResult.request = relayRequest;
-                const relayResponse = yield this.relayInner(singleConsumerSession, relayResult, relayTimeout);
-                if (relayResponse.err != undefined) {
-                    const callSessionFailure = () => {
-                        const err = this.consumerSessionManager.onSessionFailure(singleConsumerSession, relayResponse.err);
-                        if (err instanceof Error) {
-                            logger_1.Logger.error("failed on session failure %s", err);
+                relayResult.request = (0, request_builder_1.constructRelayRequest)(lavaChainId, chainID, relayData, providerPublicAddress, singleConsumerSession, epoch, reportedProviders);
+                logger_1.Logger.debug(`sending relay to provider ${providerPublicAddress}`);
+                const promise = this.relayInner(singleConsumerSession, relayResult, chainMessage, relayTimeout)
+                    .then((relayResponse) => {
+                    responsesReceived++;
+                    if (relayResponse.err != undefined) {
+                        const callSessionFailure = () => {
+                            const err = this.consumerSessionManager.onSessionFailure(singleConsumerSession, relayResponse.err);
+                            if (err instanceof Error) {
+                                logger_1.Logger.error("failed on session failure %s", err);
+                            }
+                        };
+                        if (relayResponse.backoff) {
+                            const backOffDuration = common_1.BACKOFF_TIME_ON_FAILURE;
+                            setTimeout(callSessionFailure, backOffDuration); // call sessionFailure after a delay
                         }
-                    };
-                    if (relayResponse.backoff) {
-                        const backOffDuration = common_1.BACKOFF_TIME_ON_FAILURE;
-                        setTimeout(callSessionFailure, backOffDuration); // call sessionFailure after a delay
+                        else {
+                            callSessionFailure();
+                        }
+                        const relayError = {
+                            providerAddress: providerPublicAddress,
+                            err: relayResponse.err,
+                        };
+                        const response = [relayError];
+                        trySetFinalRelayResult(response);
+                        return response;
                     }
-                    else {
-                        callSessionFailure();
+                    const reply = relayResult.reply;
+                    if (reply == undefined) {
+                        const err = new Error("reply is undefined");
+                        trySetFinalRelayResult(err);
+                        return err;
                     }
-                    const relayError = {
-                        providerAddress: providerPublicAddress,
-                        err: relayResponse.err,
-                    };
-                    return [relayError];
-                }
-                const reply = relayResult.reply;
-                if (reply == undefined) {
-                    return new Error("reply is undefined");
-                }
-                // we got here if everything is valid
-                const { expectedBlockHeight, numOfProviders } = this.finalizationConsensus.getExpectedBlockHeight(this.chainParser);
-                const pairingAddressesLen = this.consumerSessionManager.getPairingAddressesLength();
-                const latestBlock = reply.getLatestBlock();
-                this.consumerSessionManager.onSessionDone(singleConsumerSession, latestBlock, chainMessage.getApi().getComputeUnits(), relayResponse.latency, singleConsumerSession.calculateExpectedLatency(relayTimeout), expectedBlockHeight, numOfProviders, pairingAddressesLen, isHangingapi);
-                return relayResult;
+                    // we got here if everything is valid
+                    const { expectedBlockHeight, numOfProviders } = this.finalizationConsensus.getExpectedBlockHeight(this.chainParser);
+                    const pairingAddressesLen = this.consumerSessionManager.getPairingAddressesLength();
+                    const latestBlock = reply.getLatestBlock();
+                    this.consumerSessionManager.onSessionDone(singleConsumerSession, latestBlock, chainMessage.getApi().getComputeUnits(), relayResponse.latency, singleConsumerSession.calculateExpectedLatency(relayTimeout), expectedBlockHeight, numOfProviders, pairingAddressesLen, isHangingapi);
+                    trySetFinalRelayResult(relayResult);
+                    return relayResult;
+                })
+                    .catch((err) => {
+                    if (err instanceof Error) {
+                        return err;
+                    }
+                    return new Error("unsupported error " + err);
+                });
+                promises.push(promise);
             }
-            catch (err) {
-                if (err instanceof Error) {
-                    return err;
-                }
-                return new Error("unsupported error " + err);
+            const response = yield (0, common_2.promiseAny)(promises);
+            if (response instanceof Error) {
+                return response;
             }
+            // this should never happen, but we need to satisfy the typescript compiler
+            if (finalRelayResult === undefined) {
+                return new Error("finalRelayResult is undefined");
+            }
+            return finalRelayResult;
         });
     }
-    relayInner(singleConsumerSession, relayResult, relayTimeout) {
+    relayInner(singleConsumerSession, relayResult, chainMessage, relayTimeout) {
         return __awaiter(this, void 0, void 0, function* () {
             const relayRequest = relayResult.request;
             const response = {
@@ -202,13 +232,17 @@ class RPCConsumerServer {
             (0, request_builder_1.UpdateRequestedBlock)(relayData, reply);
             const finalized = (0, request_builder_1.IsFinalizedBlock)(relayData.getRequestBlock(), reply.getLatestBlock(), chainBlockStats.blockDistanceForFinalizedData);
             relayResult.finalized = finalized;
-            // TODO: when we add headers
-            // filteredHeaders, _, ignoredHeaders := rpccs.chainParser.HandleHeaders(reply.Metadata, chainMessage.GetApiCollection(), spectypes.Header_pass_reply)
+            const headersHandler = this.chainParser.handleHeaders(reply.getMetadataList(), chainMessage.getApiCollection(), api_collection_pb_1.Header.HeaderType.PASS_REPLY);
+            reply.setMetadataList(headersHandler.filteredHeaders);
             const err = (0, request_builder_1.verifyRelayReply)(reply, relayRequest, providerPublicAddress);
             if (err instanceof Error) {
                 relayResponse.err = err;
                 return relayResponse;
             }
+            reply.setMetadataList([
+                ...headersHandler.filteredHeaders,
+                ...headersHandler.ignoredMetadata,
+            ]);
             const existingSessionLatestBlock = singleConsumerSession.latestBlock;
             const dataReliabilityParams = this.chainParser.dataReliabilityParams();
             if (dataReliabilityParams.enabled) {

@@ -2,6 +2,7 @@ import { BadgeOptions } from "../badge/badgeManager";
 import { LogLevel } from "../logger/logger";
 import { RPCConsumerServer } from "../rpcconsumer/rpcconsumer_server";
 import { SendRelayOptions, SendRestRelayOptions } from "../chainlib/base_chain_parser";
+import { ProviderOptimizerStrategy } from "../providerOptimizer/providerOptimizer";
 export declare type ChainIDsToInit = string | string[];
 declare type RelayReceiver = string;
 /**
@@ -19,6 +20,8 @@ export interface LavaSDKOptions {
     allowInsecureTransport?: boolean;
     logLevel?: string | LogLevel;
     transport?: any;
+    providerOptimizerStrategy?: ProviderOptimizerStrategy;
+    maxConcurrentProviders?: number;
 }
 export declare class LavaSDK {
     private privKey;
@@ -35,6 +38,8 @@ export declare class LavaSDK {
     private transport;
     private rpcConsumerServerRouter;
     private relayer?;
+    private providerOptimizerStrategy;
+    private maxConcurrentProviders;
     /**
      * Create Lava-SDK instance
      *
@@ -53,5 +58,6 @@ export declare class LavaSDK {
     protected getRouterKey(chainId: string, apiInterface: string): RelayReceiver;
     protected isRest(options: SendRelayOptions | SendRestRelayOptions): options is SendRestRelayOptions;
     private getRpcConsumerServerRaw;
+    getConsumerMap(): Map<string, RPCConsumerServer>;
 }
 export { SendRelayOptions, SendRestRelayOptions };

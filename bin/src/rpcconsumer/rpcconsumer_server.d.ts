@@ -1,10 +1,10 @@
 import { Relayer } from "../relayer/relayer";
 import { ConsumerSessionManager } from "../lavasession/consumerSessionManager";
-import { SingleConsumerSession } from "../lavasession/consumerTypes";
+import { RPCEndpoint, SingleConsumerSession } from "../lavasession/consumerTypes";
 import { BaseChainParser, SendRelayOptions, SendRestRelayOptions } from "../chainlib/base_chain_parser";
-import { RPCEndpoint } from "../lavasession/consumerTypes";
 import { RelayReply, RelayRequest } from "../grpc_web_services/lavanet/lava/pairing/relay_pb";
 import { FinalizationConsensus } from "../lavaprotocol/finalization_consensus";
+import { ParsedMessage } from "../chainlib/chain_message";
 export declare class RPCConsumerServer {
     private consumerSessionManager;
     private chainParser;
@@ -15,11 +15,12 @@ export declare class RPCConsumerServer {
     private consumerAddress;
     private finalizationConsensus;
     constructor(relayer: Relayer, consumerSessionManager: ConsumerSessionManager, chainParser: BaseChainParser, geolocation: string, rpcEndpoint: RPCEndpoint, lavaChainId: string, finalizationConsensus: FinalizationConsensus);
+    getSessionManager(): ConsumerSessionManager;
     setChainParser(chainParser: BaseChainParser): void;
     supportedChainAndApiInterface(): SupportedChainAndApiInterface;
     sendRelay(options: SendRelayOptions | SendRestRelayOptions): Promise<RelayResult>;
     private sendRelayToProvider;
-    protected relayInner(singleConsumerSession: SingleConsumerSession, relayResult: RelayResult, relayTimeout: number): Promise<RelayResponse>;
+    protected relayInner(singleConsumerSession: SingleConsumerSession, relayResult: RelayResult, chainMessage: ParsedMessage, relayTimeout: number): Promise<RelayResponse>;
     protected sendRelayProviderInSession(singleConsumerSession: SingleConsumerSession, relayResult: RelayResult, relayTimeout: number): Promise<RelayResponse>;
 }
 interface RelayResult {

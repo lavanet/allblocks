@@ -13,8 +13,8 @@ export interface ProviderOptimizer {
     appendProbeRelayData(providerAddress: string, latency: number, success: boolean): void;
     appendRelayFailure(providerAddress: string): void;
     appendRelayData(providerAddress: string, latency: number, isHangingApi: boolean, cu: number, syncBlock: number): void;
-    chooseProvider(allAddresses: string[], ignoredProviders: string[], cu: number, requestedBlock: number, perturbationPercentage: number): string[];
-    getExcellenceQoSReportForProvider(providerAddress: string): QualityOfServiceReport;
+    chooseProvider(allAddresses: Set<string>, ignoredProviders: Set<string>, cu: number, requestedBlock: number, perturbationPercentage: number): string[];
+    getExcellenceQoSReportForProvider(providerAddress: string): QualityOfServiceReport | undefined;
 }
 export interface QoSReport {
     lastQoSReport?: QualityOfServiceReport;

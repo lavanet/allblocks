@@ -250,12 +250,12 @@ class ConsumerSessionsWithProvider {
         };
     }
     fetchEndpointConnectionFromConsumerSessionWithProvider(transport) {
-        for (const endpoint of this.endpoints) {
+        for (const [idx, endpoint] of this.endpoints.entries()) {
             if (endpoint.enabled) {
                 endpoint.client = new relay_pb_service_1.RelayerClient("https://" + endpoint.networkAddress, {
                     transport,
                 });
-                this.endpoints.push(endpoint);
+                this.endpoints[idx] = endpoint;
                 return {
                     connected: true,
                     endpoint: endpoint,

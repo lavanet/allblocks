@@ -7,16 +7,17 @@ const crypto_1 = require("@cosmjs/crypto");
 const logger_1 = require("../logger/logger");
 const DecPrecision = 18;
 function newRelayData(relayData) {
-    const { data, url, connectionType } = relayData;
+    const { data, url, connectionType, headers } = relayData;
     // create request private data
     const enc = new TextEncoder();
     const requestPrivateData = new relay_pb_1.RelayPrivateData();
     requestPrivateData.setConnectionType(connectionType);
     requestPrivateData.setApiUrl(url);
     requestPrivateData.setData(enc.encode(data));
-    requestPrivateData.setRequestBlock(common_1.NOT_APPLICABLE); // TODO: when block parsing is implemented, replace this with the request parsed block.
+    requestPrivateData.setRequestBlock(relayData.requestedBlock);
     requestPrivateData.setApiInterface(relayData.apiInterface);
     requestPrivateData.setSalt(getNewSalt());
+    requestPrivateData.setMetadataList(headers);
     return requestPrivateData;
 }
 exports.newRelayData = newRelayData;
@@ -50,7 +51,7 @@ function constructRelaySession(lavaChainID, chainID, relayData, providerAddress,
             fractions = fractions.slice(0, 18);
         }
         const toPad = DecPrecision - fractions.length;
-        return (whole + fractions + "0".repeat(toPad)).replace(/^0+/, "");
+        return (whole + fractions + "0".repeat(toPad)).replace(/^0+(?=[1-9]|0$)/, "");
     }
     function serializeToDec(input) {
         const splitted = input.split(".");
@@ -101,6 +102,13 @@ function constructRelaySession(lavaChainID, chainID, relayData, providerAddress,
     return relaySession;
 }
 function calculateContentHash(relayRequestData) {
+    let metadataBytes = new Uint8Array();
+    for (const header of relayRequestData.getMetadataList()) {
+        metadataBytes = Uint8Array.from([
+            ...metadataBytes,
+            ...encodeUtf8(header.getName() + header.getValue()),
+        ]);
+    }
     const requestBlock = relayRequestData.getRequestBlock();
     const requestBlockBytes = convertRequestedBlockToUint8Array(requestBlock);
     const apiInterfaceBytes = encodeUtf8(relayRequestData.getApiInterface());
@@ -111,6 +119,7 @@ function calculateContentHash(relayRequestData) {
     const saltBytes = relayRequestData.getSalt();
     const saltUint8Array = saltBytes instanceof Uint8Array ? saltBytes : encodeUtf8(saltBytes);
     const msgData = concatUint8Arrays([
+        metadataBytes,
         apiInterfaceBytes,
         connectionTypeBytes,
         apiUrlBytes,

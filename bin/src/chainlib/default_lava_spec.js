@@ -8,6 +8,11 @@ function getDefaultLavaSpec() {
     api.setEnabled(true);
     api.setName("abci_query");
     api.setComputeUnits(10);
+    const blockParser = new api_collection_pb_1.BlockParser();
+    blockParser.setParserFunc(api_collection_pb_1.PARSER_FUNC.PARSE_DICTIONARY_OR_ORDERED);
+    blockParser.setParserArgList(["height", "=", "2"]);
+    blockParser.setDefaultValue("latest");
+    api.setBlockParsing(blockParser);
     const apis = [];
     apis.push(api);
     const collectionData = new api_collection_pb_1.CollectionData();

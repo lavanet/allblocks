@@ -12,5 +12,6 @@ declare class SDKErrors {
     static errRestRelayMethodNotSupported: Error;
     static sessionSyncLoss: Error;
     static relayTimeout: Error;
+    static noResponseTimeout: Error;
 }
 export default SDKErrors;

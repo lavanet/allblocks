@@ -379,7 +379,7 @@ describe("ProviderOptimizer", () => {
     }));
     it("tests excellence report", () => __awaiter(void 0, void 0, void 0, function* () {
         const floatVal = 0.25;
-        const floatNew = (0, providerOptimizer_1.floatToBigNumber)(floatVal, 8);
+        const floatNew = (0, providerOptimizer_1.floatToBigNumber)(floatVal, providerOptimizer_1.FLOAT_PRECISION);
         expect(floatNew.toNumber()).toEqual(floatVal);
         const providerOptimizer = setupProviderOptimizer();
         const providersCount = 5;
@@ -390,12 +390,13 @@ describe("ProviderOptimizer", () => {
             // @ts-expect-error private method but we need it for testing without exposing it
             providerOptimizer.appendRelay(providerAddress, latency, false, true, requestCU, syncBlock, sampleTime);
         };
-        const sampleTime = (0, time_1.now)();
+        let sampleTime = (0, time_1.now)();
         for (let i = 0; i < 10; i++) {
             for (const address of providers) {
                 appendRelayData(address, TEST_BASE_WORLD_LATENCY * 2, syncBlock, sampleTime);
             }
             yield sleep(4);
+            sampleTime += 4;
         }
         const report = providerOptimizer.getExcellenceQoSReportForProvider(providers[0]);
         expect(report).not.toBeUndefined();

@@ -29,6 +29,7 @@ export declare class ConsumerSessionManager {
     getCurrentEpoch(): number;
     getNumberOfResets(): number;
     getPairingAddressesLength(): number;
+    getPairingListForCurrentEpoch(): Map<string, ConsumerSessionsWithProvider>;
     updateAllProviders(epoch: number, pairingList: ConsumerSessionsWithProvider[]): Promise<Error | undefined>;
     removeAddonAddress(addon?: string, extensions?: string[]): void;
     calculateAddonValidAddresses(addon: string, extensions: string[]): Set<string>;

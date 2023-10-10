@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.floatToBigNumber = exports.perturbWithNormalGaussian = exports.cumulativeProbabilityFunctionForPoissonDist = exports.ProviderOptimizer = exports.ProviderOptimizerStrategy = exports.COST_EXPLORATION_CHANCE = exports.DEFAULT_EXPLORATION_CHANCE = void 0;
+exports.floatToBigNumber = exports.perturbWithNormalGaussian = exports.cumulativeProbabilityFunctionForPoissonDist = exports.ProviderOptimizer = exports.ProviderOptimizerStrategy = exports.COST_EXPLORATION_CHANCE = exports.DEFAULT_EXPLORATION_CHANCE = exports.DECIMAL_PRECISION = exports.FLOAT_PRECISION = void 0;
 const lru_cache_1 = require("lru-cache");
 const logger_1 = require("../logger/logger");
 const random_1 = __importDefault(require("random"));
@@ -21,7 +21,8 @@ const MAX_HALF_TIME = 14 * 24 * time_1.hourInMillis;
 const PROBE_UPDATE_WEIGHT = 0.25;
 const RELAY_UPDATE_WEIGHT = 1;
 const INITIAL_DATA_STALENESS = 24;
-const WANTED_PRECISION = 8;
+exports.FLOAT_PRECISION = 8;
+exports.DECIMAL_PRECISION = 36;
 exports.DEFAULT_EXPLORATION_CHANCE = 0.1;
 exports.COST_EXPLORATION_CHANCE = 0.01;
 var ProviderOptimizerStrategy;
@@ -142,14 +143,13 @@ class ProviderOptimizer {
         if (!found) {
             return;
         }
-        const precision = WANTED_PRECISION;
-        const latencyScore = floatToBigNumber(providerData.latency.num / providerData.latency.denom, precision);
-        const syncScore = floatToBigNumber(providerData.sync.num / providerData.sync.denom, precision);
-        const availabilityScore = floatToBigNumber(providerData.availability.num / providerData.availability.denom, precision);
+        const latencyScore = floatToBigNumber(providerData.latency.num / providerData.latency.denom, exports.FLOAT_PRECISION);
+        const syncScore = floatToBigNumber(providerData.sync.num / providerData.sync.denom, exports.FLOAT_PRECISION);
+        const availabilityScore = floatToBigNumber(providerData.availability.num / providerData.availability.denom, exports.FLOAT_PRECISION);
         const report = new relay_pb_1.QualityOfServiceReport();
-        report.setLatency(latencyScore.toPrecision(precision));
-        report.setAvailability(availabilityScore.toPrecision(precision));
-        report.setSync(syncScore.toPrecision(precision));
+        report.setLatency(latencyScore.toFixed());
+        report.setAvailability(availabilityScore.toFixed());
+        report.setSync(syncScore.toFixed());
         logger_1.Logger.debug("QoS excellence for provider", {
             providerAddress,
             report,

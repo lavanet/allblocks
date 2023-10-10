@@ -59,6 +59,6 @@ describe("consumerTypes", () => {
         const halfDec = (0, bignumber_js_1.default)("0.5");
         result = (0, consumerTypes_1.calculateAvailabilityScore)(qosReport);
         expect((0, bignumber_js_1.default)(result.downtimePercentage).toNumber() * 2).toEqual(common_1.AVAILABILITY_PERCENTAGE);
-        expect(result.scaledAvailabilityScore).toEqual(halfDec.toPrecision(common_1.DEFAULT_DECIMAL_PRECISION));
+        expect(result.scaledAvailabilityScore).toEqual(halfDec.toFixed());
     });
 });

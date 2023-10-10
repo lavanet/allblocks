@@ -2,6 +2,8 @@ import { ProviderOptimizer as ProviderOptimizerInterface } from "../lavasession/
 import BigNumber from "bignumber.js";
 import { ScoreStore } from "../util/score/decayScore";
 import { QualityOfServiceReport } from "../grpc_web_services/lavanet/lava/pairing/relay_pb";
+export declare const FLOAT_PRECISION = 8;
+export declare const DECIMAL_PRECISION = 36;
 export declare const DEFAULT_EXPLORATION_CHANCE = 0.1;
 export declare const COST_EXPLORATION_CHANCE = 0.01;
 export interface ProviderData {

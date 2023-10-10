@@ -13,7 +13,7 @@ export declare const HeadersPassSend: 0;
  */
 export interface SendRelayOptions {
     method: string;
-    params: Array<any>;
+    params: Array<any> | Record<string, any>;
     id?: number | string;
     chainId?: string;
     metadata?: Metadata[];

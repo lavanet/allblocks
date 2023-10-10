@@ -60,6 +60,9 @@ class ConsumerSessionManager {
     getPairingAddressesLength() {
         return this.pairingAddresses.size;
     }
+    getPairingListForCurrentEpoch() {
+        return this.pairing;
+    }
     updateAllProviders(epoch, pairingList) {
         return __awaiter(this, void 0, void 0, function* () {
             logger_1.Logger.info("updateAllProviders called. epoch:", epoch, "this.currentEpoch", this.currentEpoch, "Provider list length", pairingList.length, "Api Inteface", this.rpcEndpoint.apiInterface, this.rpcEndpoint.chainId);

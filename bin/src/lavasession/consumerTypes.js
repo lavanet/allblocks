@@ -16,10 +16,10 @@ function calculateAvailabilityScore(qosReport) {
     const scaledAvailabilityScore = (0, bignumber_js_1.default)(common_1.AVAILABILITY_PERCENTAGE)
         .minus(downtimePercentage)
         .div(common_1.AVAILABILITY_PERCENTAGE)
-        .toPrecision();
+        .toFixed();
     return {
-        downtimePercentage: downtimePercentage.toPrecision(common_1.DEFAULT_DECIMAL_PRECISION),
-        scaledAvailabilityScore: bignumber_js_1.default.max((0, bignumber_js_1.default)(0), scaledAvailabilityScore).toPrecision(common_1.DEFAULT_DECIMAL_PRECISION),
+        downtimePercentage: downtimePercentage.toFixed(),
+        scaledAvailabilityScore: bignumber_js_1.default.max((0, bignumber_js_1.default)(0), scaledAvailabilityScore).toFixed(),
     };
 }
 exports.calculateAvailabilityScore = calculateAvailabilityScore;
@@ -98,7 +98,7 @@ class SingleConsumerSession {
             }
             this.qoSInfo.totalSyncScore++;
             const sync = (0, bignumber_js_1.default)(this.qoSInfo.syncScoreSum).div(this.qoSInfo.totalSyncScore);
-            this.qoSInfo.lastQoSReport.setSync(sync.toPrecision(common_1.DEFAULT_DECIMAL_PRECISION));
+            this.qoSInfo.lastQoSReport.setSync(sync.toFixed());
             if ((0, bignumber_js_1.default)(1).gt(sync)) {
                 logger_1.Logger.debug(`QoS sync report ${JSON.stringify({
                     sync: this.qoSInfo.lastQoSReport.getSync(),
@@ -110,7 +110,7 @@ class SingleConsumerSession {
         }
         else {
             const sync = (0, bignumber_js_1.default)(1);
-            this.qoSInfo.lastQoSReport.setSync(sync.toPrecision(common_1.DEFAULT_DECIMAL_PRECISION));
+            this.qoSInfo.lastQoSReport.setSync(sync.toFixed());
         }
         return;
     }
@@ -118,9 +118,7 @@ class SingleConsumerSession {
         const oneDec = (0, bignumber_js_1.default)("1");
         const bigExpectedLatency = (0, bignumber_js_1.default)(expectedLatency);
         const bigLatency = (0, bignumber_js_1.default)(latency);
-        return bignumber_js_1.default.min(oneDec, bigExpectedLatency)
-            .div(bigLatency)
-            .toPrecision(common_1.DEFAULT_DECIMAL_PRECISION);
+        return bignumber_js_1.default.min(oneDec, bigExpectedLatency).div(bigLatency).toFixed();
     }
 }
 exports.SingleConsumerSession = SingleConsumerSession;

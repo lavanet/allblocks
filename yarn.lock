@@ -950,10 +950,10 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
-"@lavanet/lava-sdk@^0.25.5":
-  version "0.25.5"
-  resolved "https://registry.yarnpkg.com/@lavanet/lava-sdk/-/lava-sdk-0.25.5.tgz#e407a3a0500614d3906444eebd85dc2ede9c2cff"
-  integrity sha512-kqq8Nz3Vm/wOyKJsIsQBJhmFY2/B1GB0/9OSjfICohg2Y7c/ZGCq6aoAJJS141Oze/hlmtaTfwi/n+z3A/i8QQ==
+"@lavanet/lava-sdk@^0.25.6":
+  version "0.25.6"
+  resolved "https://registry.yarnpkg.com/@lavanet/lava-sdk/-/lava-sdk-0.25.6.tgz#1f5a5ce56037f31796ce3cff2381b882556f5990"
+  integrity sha512-3FkitiwBGxdJAvPa4GGK165PYUAdoEVipeRVS9Nez6uQzSus7nhG275W010bkaDUQkor34vObrJa//N1P4Q5JA==
   dependencies:
     "@cosmjs/amino" "^0.29.4"
     "@cosmjs/crypto" "^0.29.4"

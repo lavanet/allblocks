@@ -316,7 +316,7 @@ const sdkTestnetConfig: LavaSDKOptions = {
 
 const getConfig = (chain: ChainDesc) => {
   let newConfig = structuredClone(sdkTestnetConfig);
-  newConfig.chainIds = chain.chainId;
+  newConfig.chainIds = [{ chainId: chain.chainId, apiInterfaces: [chain.rpcInterface] }];
   return newConfig;
 };
 

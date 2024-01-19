@@ -1,8 +1,7 @@
 "use client";
 
-import { LavaSDK } from "@lavanet/lava-sdk";
 import { useState, useEffect, useRef } from "react";
-import { Card, Title, Tracker, Flex, Text, Color, Badge, Icon } from "@tremor/react";
+import { Card, Title, Tracker, Flex, Color, Badge, Icon } from "@tremor/react";
 import { HandIcon } from "@heroicons/react/outline";
 
 interface RelayParseFunc {
@@ -11,6 +10,10 @@ interface RelayParseFunc {
 
 const evmRelayParse = (res: any): number => {
   return Number(res["result"]);
+};
+
+const nearRelayParse = (res: any): number => {
+  return Number(res["result"]["header"]["height"]);
 };
 
 const cosmosRelayParse = (res: any): number => {
@@ -31,6 +34,7 @@ const solanaRelayParse = (res: any): number => {
 
 const parseToFunc: { [name: string]: RelayParseFunc } = {
   evmRelayParse: evmRelayParse,
+  nearRelayParse: nearRelayParse,
   cosmosRelayParse: cosmosRelayParse,
   aptosRelayParse: aptosRelayParse,
   starkRelayParse: starkRelayParse,
@@ -42,157 +46,83 @@ interface Tracker {
   tooltip: string;
 }
 
-interface SdkInitQueueItem {
-  sdkConfig: any; // Replace 'any' with the actual type if known
-  env: string;
-  name: string;
-  setSdkInstance: (instance: any) => void;
-  setSdkLoadTime: (instance: any) => void;
-}
-
-interface ChainProps {
-  sdkConfig: any; // Replace 'any' with the actual type if known
-  env: string;
-  name: string;
-  relay: any; // Replace 'any' with the actual type if known
-  relayParse: string;
-  trkSz: number;
-  blockTimeSeconds: number;
-  testnet: string;
-}
-
-const sdkInitQueue: SdkInitQueueItem[] = [];
-let isProcessingQueue = false;
-
 export const Chain = (props: any) => {
-  const trackerSz = props.trkSz;
-  const initialData = Array(trackerSz).fill({ color: "gray", tooltip: "N/A" });
+  const blocktime = props.blockTimeSeconds * 1000;
+  const [curSlot, setCurSlot] = useState(0);
+  const initialData = Array(props.trkSz).fill({ color: "gray", tooltip: "N/A" });
   const [data, setData] = useState<Tracker[]>(initialData);
   const [msAvg, setMsAvg] = useState(0);
   const [msAvgCount, setMsAvgCount] = useState(0);
-  const blocktime = props.blockTimeSeconds * 1000;
-  const currentSlotRef = useRef(0);
-  const [selectedChain, setSelectedChain] = useState('');
-
-  const [sdkInstance, setSdkInstance] = useState<null | LavaSDK>(
-    null
-  );
+  const [curLatency, setCurLatency] = useState(0);
   const [block, setBlock] = useState(0);
-  const [sdkLoadTime, setSdkLoadTime] = useState(0);
 
-  const sdkInstanceRef = useRef<null | LavaSDK>(null);
-  const [getBlockNow, setGetBlockNow] = useState(0);
-
-  const getBlock = async () => {
-    if (sdkInstanceRef.current === null) {
-      console.log("error");
-      return;
-    }
-
-    try {
-      const t0 = performance.now();
-      const res = await sdkInstanceRef.current.sendRelay(props.relay);
-      const t1 = performance.now();
-      const latency = t1 - t0;
-      //
-      const block = parseToFunc[props.relayParse](res);
-      setBlock(block);
-      setMsAvg((msAvg * msAvgCount + latency) / (msAvgCount + 1));
-      setMsAvgCount(msAvgCount + 1);
-
-      setData((prevData) => {
-        // Reset the data if all slots are filled
-        var newData = [...prevData];
-        if (currentSlotRef.current === 0) {
-          newData = [...initialData];
+  useEffect(() => {
+    const interval = setInterval(
+      async () => {
+        if (props.sdkInstance === null) {
+          console.log("error");
+          return;
         }
 
-        const slot = currentSlotRef.current;
-        newData[slot] = {
-          color: "emerald",
-          tooltip: `${Math.trunc(latency)}ms`,
-        };
-        // Update current slot, wrapping around if necessary
-        currentSlotRef.current = (currentSlotRef.current + 1) % trackerSz;
-        return newData;
-      });
-    } catch (err) {
-      console.log("error sending relay", err);
+        let isErr = false;
+        let latency = 0;
+        try {
+          const t0 = performance.now();
+          const res = await props.sdkInstance.sendRelay(props.relay);
+          const t1 = performance.now();
+          latency = t1 - t0;
+          setCurLatency(latency);
 
-      setData((prevData) => {
-        var newData = [...prevData];
-        if (currentSlotRef.current === 0) {
-          newData = [...initialData];
+          //
+          const block = parseToFunc[props.relayParse](res);
+          setBlock(block);
+          setMsAvg(prevAvg => (prevAvg * msAvgCount + latency) / (msAvgCount + 1));
+          setMsAvgCount(prevCount => prevCount + 1);
+        } catch (err) {
+          console.log("error sending relay", err);
+          isErr = true;
+          setCurLatency(1000);
         }
-        const slot = currentSlotRef.current;
-        newData[slot] = {
-          color: "red",
-          tooltip: "Error",
-        };
-        // Update current slot, wrapping around if necessary
-        currentSlotRef.current = (currentSlotRef.current + 1) % trackerSz;
-        return newData;
-      });
-    }
 
-    setTimeout(() => {
-      setGetBlockNow(getBlockNow + 1);
-    }, blocktime);
-  };
+        setData((prevData) => {
+          const newData = [...prevData];
+          const slot = curSlot;
+          const nextSlot = (slot + 1) % props.trkSz;
 
-  const processSdkInitQueue = async () => {
-    if (sdkInitQueue.length === 0) {
-      isProcessingQueue = false;
-      return;
-    }
+          if (!isErr) {
+            newData[slot] = {
+              color: "emerald",
+              tooltip: `${Math.trunc(latency)}ms`,
+            };
+          } else {
+            newData[slot] = {
+              color: "red",
+              tooltip: "Error",
+            }
+          }
+          newData[nextSlot] = {
+            color: "yellow",
+            tooltip: "Next...",
+          }
 
-    isProcessingQueue = true;
+          // Update current slot, wrapping around if necessary
+          setCurSlot(nextSlot);
+          return [...newData]
+        });
 
-    const chainProps = sdkInitQueue.shift();
-    let t;
-    try {
-      const t0 = performance.now();
-      t = await LavaSDK.create(chainProps!.sdkConfig);
-      const t1 = performance.now();
-      chainProps!.setSdkLoadTime(t1 - t0);
-      chainProps!.setSdkInstance(t);
-    } catch (err) {
-      console.error("Error initializing SDK for chain:", chainProps!.name, err);
-    }
-
-    // Continue processing the next chain in the queue
-    processSdkInitQueue();
-  };
-
-  useEffect(() => {
-    // Add the chain to the SDK initialization queue
-    sdkInitQueue.push({
-      sdkConfig: props.sdkConfig,
-      env: props.env,
-      name: props.name,
-      setSdkInstance: setSdkInstance,
-      setSdkLoadTime: setSdkLoadTime,
-    });
-
-    // Start processing the queue if not already running
-    if (!isProcessingQueue) {
-      processSdkInitQueue();
-    }
-  }, []);
-
-  useEffect(() => {
-    sdkInstanceRef.current = sdkInstance;
-    if (sdkInstance) {
-      // Start polling only after sdkInstance is set
-      getBlock();
-    }
-  }, [sdkInstance]);
-
-  useEffect(() => {
-    if (sdkInstanceRef.current) {
-      getBlock();
-    }
-  }, [getBlockNow]);
+      }
+      , (curLatency > blocktime) || (curLatency == 0) ? 0 : blocktime - curLatency);
+    return () => clearInterval(interval);
+  }, [
+    curSlot,
+    props.sdkInstance,
+    props.relay,
+    props.relayParse,
+    props.trkSz,
+    blocktime,
+    msAvgCount,
+    curLatency,
+  ]);
 
   return (
     <Card className="mx-auto">
@@ -213,10 +143,6 @@ export const Chain = (props: any) => {
           <Icon icon={HandIcon} onClick={() => props.filterChain(props.chainId)} size="xs" className="cursor-pointer" variant="solid" />
         </div>
       </Flex>
-      <Text>
-        SDK load time{" "}
-        {sdkLoadTime > 0 ? `${Math.trunc(sdkLoadTime)}ms` : "- loading"}
-      </Text>
       <Title className="text-lg">Block {block > 0 ? block : "- loading"}</Title>
       <Flex justifyContent="end" className="mt-4">
         <Badge size="sm" className="mr-2">
